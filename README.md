@@ -3,6 +3,7 @@
 
 ### References
 https://github.com/X-PLUG/MobileAgent/tree/main/PC-Agent
+
 https://arxiv.org/abs/2502.14282
 
 https://arxiv.org/abs/2308.00352
