@@ -5,27 +5,7 @@ def get_action_prompt(instruction, clickable_infos, width, height, thought_histo
         prompt += f"The first image is a clean computer screenshot. Its width is {width} pixels and its height is {height} pixels. And the second image is the annotated version of it, where icons are marked with numbers. The user\'s instruction is: {instruction}.\n\n"
     else:
         prompt += f"This image is a computer screenshot. Its width is {width} pixels and its height is {height} pixels. The user\'s instruction is: {instruction}.\n\n"
-    
-    prompt += "### Screenshot information ###\n"
-    prompt += "In order to help you better perceive the content in this screenshot, we extract some information of the current screenshot. "
-    prompt += "This information consists of two parts: coordinates; content. "
-    if location_info == 'center':
-        prompt += "The format of the coordinates is [x, y], x is the pixel from left to right and y is the pixel from top to bottom; "
-    elif location_info == 'bbox':
-        prompt += "The format of the coordinates is [x1, y1, x2, y2], x is the pixel from left to right and y is the pixel from top to bottom. (x1, y1) is the coordinates of the upper-left corner, (x2, y2) is the coordinates of the bottom-right corner; "
-
-    if icon_caption == 1:
-        prompt += "the content is a text or an icon description respectively. "
-    else:
-        prompt += "the content is a text or 'icon' respectively. "
-    prompt += "The information is as follow:\n"
-
-    for clickable_info in clickable_infos:
-        if clickable_info['text'] != "" and clickable_info['text'] != "icon: None" and clickable_info['coordinates'] != (0, 0):
-            prompt += f"{clickable_info['coordinates']}; {clickable_info['text']}\n"
-            # print(f"{clickable_info['coordinates']}; {clickable_info['text']}\n")
-    
-    prompt += "Please note that this information is not necessarily accurate. You need to combine the screenshot to understand."
+ 
     prompt += "\n\n"
     
     if len(action_history) > 0:
@@ -113,27 +93,11 @@ def get_action_prompt(instruction, clickable_infos, width, height, thought_histo
 
 
 def get_reflect_prompt(instruction, clickable_infos1, clickable_infos2, width, height, summary, action, add_info):
-    prompt = f"These images are two computer screenshots before and after an operation. Their widths are {width} pixels and their heights are {height} pixels.\n\n"
-    
-    prompt += "In order to help you better perceive the content in this screenshot, we extract some information on the current screenshot. "
-    prompt += "The information consists of two parts, consisting of format: coordinates; content. "
-    prompt += "The format of the coordinates is [x, y], x is the pixel from left to right and y is the pixel from top to bottom; the content is a text or an icon description respectively "
-    prompt += "\n\n"
-    
+    prompt = "### Background ###\n"    
     prompt += "### Before the current operation ###\n"
-    prompt += "Screenshot information:\n"
-    for clickable_info in clickable_infos1:
-        if clickable_info['text'] != "" and clickable_info['text'] != "icon: None" and clickable_info['coordinates'] != (0, 0):
-            prompt += f"{clickable_info['coordinates']}; {clickable_info['text']}\n"
-    prompt += "\n\n"
-            
+
     prompt += "### After the current operation ###\n"
-    prompt += "Screenshot information:\n"
-    for clickable_info in clickable_infos2:
-        if clickable_info['text'] != "" and clickable_info['text'] != "icon: None" and clickable_info['coordinates'] != (0, 0):
-            prompt += f"{clickable_info['coordinates']}; {clickable_info['text']}\n"
-    prompt += "\n\n"
-    
+
     prompt += "### Current operation ###\n"
     prompt += f"The user\'s instruction is: {instruction}."
     if add_info != "":

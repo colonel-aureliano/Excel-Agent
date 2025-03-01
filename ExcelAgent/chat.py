@@ -1,5 +1,5 @@
 import copy
-from PCAgent.api import encode_image
+from ExcelAgent.api import encode_image
 
 
 def init_action_chat():
