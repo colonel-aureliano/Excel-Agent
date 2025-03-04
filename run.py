@@ -5,18 +5,18 @@ import torch
 import shutil
 
 from ExcelAgent.api import inference_chat
-from ExcelAgent.prompt import get_action_prompt, get_reflect_prompt, get_memory_prompt, get_process_prompt
+from ExcelAgent.prompt import *
 from ExcelAgent.chat import init_action_chat, init_reflect_chat, init_memory_chat, add_response
+from ExcelAgent.agent import *
 
 from modelscope import snapshot_download, AutoModelForCausalLM, AutoTokenizer, GenerationConfig
 
 import argparse
 from key_stroke_handle import *
 
-
 parser = argparse.ArgumentParser(description="Excel Agent")
 parser.add_argument('--instruction', type=str, default='default')
-parser.add_argument('--excel_file_path', type=str, default='')
+parser.add_argument('--excel_file_path', type=str, default='default.xlsx')
 parser.add_argument('--font_path', type=str, default="/System/Library/Fonts/Times.ttc")
 parser.add_argument('--pc_type', type=str, default="mac") # windows or mac
 parser.add_argument('--api_url', type=str, default="https://api.openai.com/v1/chat/completions", help="GPT-4o api url.")
@@ -48,6 +48,8 @@ else:
     # Your default instruction
     instruction = "Create a new doc on Word, write a brief introduction of Alibaba, and save the document."
     # instruction = "Help me download the pdf version of the 'Mobile Agent v2' paper on Chrome."
+
+excel_file_path = args.excel_file_path
 
 # Your GPT-4o API URL
 API_url = args.api_url
@@ -81,10 +83,6 @@ reflection_switch = True if not args.disable_reflection else False
 memory_switch = False # default: False
 ###################################################################################################
 
-
-def get_perception_infos(screenshot_file, screenshot_som_file, font_path):
-    pass
-
 ### Load caption model ###
 device = "cuda"
 torch.manual_seed(1234)
@@ -113,151 +111,48 @@ thought_history = []
 summary_history = []
 action_history = []
 reflection_thought = ""
-summary = ""
-action = ""
 completed_requirements = ""
 memory = ""
 insight = ""
 temp_file = "temp"
-screenshot = "screenshot"
 
 if os.path.exists(temp_file):
     shutil.rmtree(temp_file)
 os.mkdir(temp_file)
-if not os.path.exists(screenshot):
-    os.mkdir(screenshot)
 error_flag = False
 
+###################################################################################################
+
+# Start main loop
 
 iter = 0
 while True:
     iter += 1
 
-    prompt_action = get_action_prompt(instruction, [], 0, 0, thought_history, summary_history, action_history, summary, action, reflection_thought, add_info, error_flag, completed_requirements, memory, args.use_som, args.icon_caption, args.location_info)
-    chat_action = init_action_chat()
-    if args.use_som == 1:
-        chat_action = add_response("user", prompt_action, chat_action, [])
-    else:
-        chat_action = add_response("user", prompt_action, chat_action, [])
+    prompt_manager = get_manager_initial_prompt(instruction, excel_file_path, thought_history, summary_history, action_history, completed_requirements, add_info)
+    manager_agent_response = "..." # assume this is the response from the manager agent
+    subtask_list = ["...", "..."] # assume this is the subtask list extracted from the manager agent response
+    print("Subtask list: ", subtask_list)
 
-    output_action = inference_chat(chat_action, vl_model_version, API_url, token)
-    thought = output_action.split("### Thought ###")[-1].split("### Action ###")[0].replace("\n", " ").replace(":", "").replace("  ", " ").strip()
-    summary = output_action.split("### Operation ###")[-1].replace("\n", " ").replace("  ", " ").strip()
-    action = output_action.split("### Action ###")[-1].split("### Operation ###")[0].replace("\n", " ").replace("  ", " ").strip()
-    chat_action = add_response("assistant", output_action, chat_action)
-    status = "#" * 50 + " Decision " + "#" * 50
-    print(status)
-    print(output_action)
-    print('#' * len(status))
+    for subtask_inst in subtask_list:
+        thought, summary, action = action_agent_response(subtask_inst, excel_file_path, thought_history, summary_history, action_history, completed_requirements, add_info, reflection_thought)
+
+        # act on action
     
+        time.sleep(2) # wait for the action to be excuted
 
-    if "Double Tap" in action:
-        coordinate = action.split("(")[-1].split(")")[0].split(", ")
-        x, y = int(coordinate[0]), int(coordinate[1])
-        tap(x, y, 2)
-
-    elif "Triple Tap" in action:
-        coordinate = action.split("(")[-1].split(")")[0].split(", ")
-        x, y = int(coordinate[0]), int(coordinate[1])
-        tap(x, y, 3)
-
-    elif "Tap" in action:
-        coordinate = action.split("(")[-1].split(")")[0].split(", ")
-        x, y = int(coordinate[0]), int(coordinate[1])
-        tap(x, y, 1)
-
-    elif "Shortcut" in action:
-        keys = action.split("(")[-1].split(")")[0].split(", ")
-        key1, key2 = keys[0].lower(), keys[1].lower()
-        shortcut(key1, key2)
-    
-    elif "Press" in action:
-        key = action.split("(")[-1].split(")")[0]
-        presskey(key)
-
-    elif "Open App" in action:
-        app = action.split("(")[-1].split(")")[0]
-        open_app(app)
-
-    elif "Type" in action:
-        coordinate = action.split("(")[1].split(")")[0].split(", ")
-        x, y = int(coordinate[0]), int(coordinate[1])
-        if "[text]" not in action:
-            text = action.split("[")[-1].split("]")[0]
-        else:
-            text = action.split(" \"")[-1].split("\"")[0]
-        tap_type_enter(x, y, text)
-        
-    elif "Stop" in action:
-        break
-    
-    time.sleep(2) # wait for the action to be excuted
-
-    if memory_switch:
-        prompt_memory = get_memory_prompt(insight)
-        chat_action = add_response("user", prompt_memory, chat_action)
-        output_memory = inference_chat(chat_action, vl_model_version, API_url, token)
-        chat_action = add_response("assistant", output_memory, chat_action)
-        status = "#" * 50 + " Memory " + "#" * 50
-        print(status)
-        print(output_memory)
-        print('#' * len(status))
-        output_memory = output_memory.split("### Important content ###")[-1].split("\n\n")[0].strip() + "\n"
-        if "None" not in output_memory and output_memory not in memory:
-            memory += output_memory
-    
-    if reflection_switch:
-        prompt_reflect = get_reflect_prompt(instruction, [], [], 0, 0, summary, action, add_info)
-        chat_reflect = init_reflect_chat()
-        chat_reflect = add_response("user", prompt_reflect, chat_reflect, [])
-
-        output_reflect = inference_chat(chat_reflect, vl_model_version, API_url, token)
-        reflection_thought = output_reflect.split("### Thought ###")[-1].split("### Answer ###")[0].replace("\n", " ").strip()
-        reflect = output_reflect.split("### Answer ###")[-1].replace("\n", " ").strip()
-        chat_reflect = add_response("assistant", output_reflect, chat_reflect)
-        status = "#" * 50 + " Reflection " + "#" * 50
-        print(status)
-        print(output_reflect)
-        print('#' * len(status))
-    
-        if 'A' in reflect:
-            thought_history.append(thought)
-            summary_history.append(summary)
-            action_history.append(action)
-            
-            prompt_planning = get_process_prompt(instruction, thought_history, summary_history, action_history, completed_requirements, add_info)
-            chat_planning = init_memory_chat()
-            chat_planning = add_response("user", prompt_planning, chat_planning)
-            output_planning = inference_chat(chat_planning, 'gpt-4o', API_url, token)
-            chat_planning = add_response("assistant", output_planning, chat_planning)
-            status = "#" * 50 + " Planning " + "#" * 50
+        if memory_switch:
+            prompt_memory = get_memory_prompt(insight)
+            chat_action = add_response("user", prompt_memory, chat_action)
+            output_memory = inference_chat(chat_action, vl_model_version, API_url, token)
+            chat_action = add_response("assistant", output_memory, chat_action)
+            status = "#" * 50 + " Memory " + "#" * 50
             print(status)
-            print(output_planning)
+            print(output_memory)
             print('#' * len(status))
-            completed_requirements = output_planning.split("### Completed contents ###")[-1].replace("\n", " ").strip()
-            
-            error_flag = False
+            output_memory = output_memory.split("### Important content ###")[-1].split("\n\n")[0].strip() + "\n"
+            if "None" not in output_memory and output_memory not in memory:
+                memory += output_memory
         
-        elif 'B' in reflect:
-            error_flag = True
-            # presskey('esc')
-            
-        elif 'C' in reflect:
-            error_flag = True
-            # presskey('esc')
-    
-    else:
-        thought_history.append(thought)
-        summary_history.append(summary)
-        action_history.append(action)
-        
-        prompt_planning = get_process_prompt(instruction, thought_history, summary_history, action_history, completed_requirements, add_info)
-        chat_planning = init_memory_chat()
-        chat_planning = add_response("user", prompt_planning, chat_planning)
-        output_planning = inference_chat(chat_planning, 'gpt-4o', API_url, token)
-        chat_planning = add_response("assistant", output_planning, chat_planning)
-        status = "#" * 50 + " Planning " + "#" * 50
-        print(status)
-        print(output_planning)
-        print('#' * len(status))
-        completed_requirements = output_planning.split("### Completed contents ###")[-1].replace("\n", " ").strip()
+        if reflection_switch:
+            reflection_thought = reflect_agent_response(thought, summary, action, excel_file_path, thought_history, summary_history, action_history, completed_requirements, add_info)
