@@ -2,7 +2,7 @@ from openai import OpenAI
 
 import google.generativeai as genai
 
-from ..config.utils import logger
+from ..utils.utils import logger
 from typing import Union, List, Dict
 
 def call_genaiapi(SYSTEM_PROMPT: str, 

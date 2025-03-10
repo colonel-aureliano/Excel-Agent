@@ -4,15 +4,14 @@ import copy
 import torch
 import shutil
 
-from ExcelAgent.api import inference_chat
-from ExcelAgent.prompt import *
-from ExcelAgent.chat import init_action_chat, init_reflect_chat, init_memory_chat, add_response
-from ExcelAgent.agent import *
+from ExcelAgent.chat.api import inference_chat
+from ExcelAgent.chat.prompt import get_manager_initial_prompt, get_memory_prompt
+from ExcelAgent.chat.chat import init_action_chat, init_reflect_chat, init_memory_chat, add_response
+from ExcelAgent.chat.response import action_agent_response, reflect_agent_response
 
 from modelscope import snapshot_download, AutoModelForCausalLM, AutoTokenizer, GenerationConfig
 
 import argparse
-from key_stroke_handle import *
 
 parser = argparse.ArgumentParser(description="Excel Agent")
 parser.add_argument('--instruction', type=str, default='default')

@@ -1,5 +1,5 @@
 from prompt import *
-from api import *
+from ExcelAgent.chat.api import *
 from chat import *
 from run import vl_model_version, API_url, token, args, memory, error_flag
 
