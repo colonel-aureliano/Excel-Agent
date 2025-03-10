@@ -1,22 +1,28 @@
-#TODO: extract prompts common to agents below into global variables
-
-
 def get_manager_initial_prompt(instruction, excel_file_path, thought_history, summary_history, action_history, completed_content, add_info):
-    # create a prompt for the manager agent
-    excel_file = "Pretend excel file path is read and content is extracted to this string"
+    excel_file = "Pretend the excel file path is read and content is extracted to this string"
+    
     prompt = "### Background ###\n"
-    prompt += f"There is an user\'s instruction which is: {instruction}. You are an excel processing assistant and are operating the user\'s excel file.\n"
+    prompt += f"The user has provided the following instruction: \"{instruction}\".\n"
+    prompt += "You are an Excel processing assistant. Your role is to analyze the instruction and break it down into clear, sequential subtasks for manipulating the Excel file.\n"
     prompt += f"Current excel file: {excel_file}\n\n"
 
-    # TODO: tell manager agent to parse user instruction and divide into subtasks
-    # TODO: add all kinds of expectations and requirements you can think of to the prompt
+    prompt += "### Task Description ###\n"
+    prompt += "Your task is to decompose the above instruction into smaller, actionable subtasks. Each subtask should target a specific operation on the Excel file (e.g., selecting a range, applying formatting, filtering rows, or performing calculations).\n"
 
-    # TODO: design output format, refer to the action agent's output format
-    # prompt += "### Output format ###\n"
+    prompt += "### Output Requirements ###\n"
+    prompt += "Provide a list of subtasks with clear and concise descriptions. Each subtask should be formatted as a short sentence. Ensure that the overall set of subtasks, when executed in order, would complete the user's instruction.\n"
+    prompt += "For example:\n"
+    prompt += "1. Select the range from A1 to D10.\n"
+    prompt += "2. Apply left alignment to all selected cells.\n"
+    prompt += "3. Filter out rows containing the keyword 'abc'.\n"
+    prompt += "4. Summarize the data in a new text cell.\n\n"
+
+    prompt += "### Your Output ###\n"
+    prompt += "List the subtasks only, one per line, numbered in order.\n"
 
     if add_info != "":
         prompt += "### Hint ###\n"
-        prompt += "There are hints to help you complete the user\'s instructions. The hints are as follow:\n"
+        prompt += "There are hints to help you complete the user\'s instructions. The hints are as follows:\n"
         prompt += add_info
         prompt += "\n\n"
 
@@ -27,20 +33,18 @@ before_action_excel_file = ""
 def get_action_prompt(subtask_instruction, excel_file_path, thought_history, summary_history, action_history, last_summary, last_action, reflection_thought, add_info, error_flag, completed_content, memory, use_som, icon_caption, location_info):
     excel_file = "Pretend excel file path is read and content is extracted to this string"
     before_action_excel_file = excel_file
+    
     prompt = "### Background ###\n"
-    prompt += f"There is an user\'s instruction which is: {subtask_instruction}. You are an excel processing assistant and are operating the user\'s excel file.\n"
+    prompt += f"You are an Excel operating assistant. The current user instruction is: \"{subtask_instruction}\".\n"
     prompt += f"Current excel file: {excel_file}\n\n"
     prompt += "\n\n"
 
-    # TODO: change anything specific to PC Agent to our Excel Agent
     if len(action_history) > 0:
-        prompt += "### History operations ###\n"
-        prompt += "Before arriving at the current excel file, you have completed the following operations:\n"
-        # prompt += "Before reaching this page, some operations have been completed. You need to refer to the completed operations and the corresponding thoughts to decide the next operation. These operations are as follow:\n"
+        prompt += "### History of Operations ###\n"
+        prompt += "The following operations have already been executed on the Excel file in sequence:\n"
         for i in range(len(action_history)):
-            prompt += f"Step-{i+1}: [Operation: " + summary_history[i].split(' to ')[0].strip() + "; Action: " + action_history[i] + "]\n"
-            # prompt += f"Step-{i+1}: [Thought: " + thought_history[i] + "; Operation: " + summary_history[i].split(" to ")[0].strip() + "; Action: " + action_history[i] + "]\n"
-            # print("Step-{i+1}: [Operation: " + summary_history[i].split(' to  ')[0].strip() + "; Action: " + action_history[i] + "]\n")
+            operation = summary_history[i].split(" to ")[0].strip() if summary_history[i] else "N/A"
+            prompt += f"Step {i+1}: Operation: {operation}; Action: {action_history[i]}\n"
         prompt += "\n"
     
     if completed_content != "":
@@ -64,111 +68,109 @@ def get_action_prompt(subtask_instruction, excel_file_path, thought_history, sum
         prompt += "\n\n"
         print(f"You previously wanted to perform the operation \"{last_summary}\" on this page and executed the Action \"{last_action}\". But you find that this operation does not meet your expectation. You need to reflect and revise your operation this time.")
     
-    prompt += "### Task requirements ###\n"
-    prompt += "In order to meet the user\'s requirements, you need to select one of the following operations to operate on the current excel file:\n"
-    prompt += "For certain items that require selection, such as font and font size, direct input is more efficient than scrolling through choices."
-    prompt += "You must choose one of the actions below:\n"
-
-    # TODO: change below into the action space we had defined along with action description
-    # some actions take parameters
-    prompt += "Open App (app name): If you want to open an app, you should use this action to open the app named 'app name'."
-    prompt += "Tap (x, y): Tap the position (x, y) in current page. This can be used to select an item.\n"
-    prompt += "Double Tap (x, y): Double tap the position (x, y) in the current page. This can be used to open a file. If Tap (x, y) in the last step doesn't work, you can try double tap the position (x, y) in the current page.\n"
-    prompt += "Triple Tap (x, y): This action can be used to select the paragraph in the position (x, y)."
-    prompt += '''
-    Shortcut (key1, key2): There are several shortcuts (key1+key2) you may use.
-    For example, if you can't find the download button, use command+s to save the page or download the file.
-    To select all, you can use command+a.
-    To create a new webpage in Chrome or a new file in Word, you can use command+n.
-    To copy an item, you can first select it and then use command+c.
-    To paste the copied item, you can first select the location you want to paste it to, and then use command+v.
-    '''
-    prompt += '''
-    Press (key name): There are several keys that may help.
-    For example, if you want to delete the selected content, press 'backspace'.
-    You can press 'enter' to confirm, submit the input command, or insert a line break.
-    Also, you can press 'up', 'down', 'left', or 'right' to scroll the page or adjust the position of the selected object.
-    '''
-    prompt += "Type (x, y), [text]: Tap the position (x, y) and type the \"text\" in the input box and press the enter key.\n"
-    prompt += "Tell (text): Tell me the answer of the input query.\n"
-    prompt += "Stop: If all the operations to meet the user\'s requirements have been completed in ### History operation ###, use this operation to stop the whole process."
-    prompt += "\n\n"
-
-    # TODO: change below to match our use case
-    prompt += "### Output format ###\n"
-    prompt += "Your output consists of the following three parts:\n"
-    prompt += "### Thought ###\nThink about the requirements that have been completed in previous operations and the requirements that need to be completed in the next one operation.\n"
-    prompt += "### Action ###\nYou can only choose one from the actions above. Make sure to generate the coordinates or text in the \"()\".\n"
-    prompt += "### Summary ###\nPlease generate a brief natural language description for the operation in Action based on your Thought."
-
     if add_info != "":
         prompt += "### Hint ###\n"
         prompt += "There are hints to help you complete the user\'s instructions. The hints are as follow:\n"
         prompt += add_info
         prompt += "\n\n"
 
+    prompt += "### Task Requirements ###\n"
+    prompt += "Based on the current state and the above history, decide the next single operation to perform on the Excel file. "
+    prompt += "For certain items that require selection, such as font and font size, direct input is more efficient than scrolling through choices."
+    prompt += "You must choose one of the actions below, optionally with an IF condition:\n\n"
+    
+    prompt += "1. Select: Select one or more boxes by specifying four parameters (col1, row1, col2, row2) that delineate the region of selection. "
+    prompt += "Optionally, append an IF statement to filter the selection (e.g., IF cell value > 10).\n\n"
+    
+    prompt += "2. Select and Drag: Select a cell's fill handle and drag it to fill a range, defined by four parameters (col1, row1, col2, row2). "
+    prompt += "Optionally, include an IF condition to restrict the operation (e.g., IF cell is numeric).\n\n"
+    
+    prompt += "3. Select Input Field: Select the input field (the formula bar at the top of Excel) for entering text into a cell.\n\n"
+    
+    prompt += "4. Set: Type a specified text into the input field. The text to set should be provided as a parameter. "
+    prompt += "Optionally, include an IF condition (e.g., IF input field is empty).\n\n"
+    
+    prompt += "5. Copy/Paste/Delete/...: Choose a tool from the right-click context menu to perform operations such as copy, paste, delete, etc. "
+    prompt += "You should specify the tool name and any required parameters. Optionally, add an IF condition if needed.\n\n"
+    
+    prompt += "6. Tell User: Output a textual response directly to the user (this action does not manipulate the Excel file but communicates status or results).\n\n"
+    
+    prompt += "7. Terminate: End the process if all operations required by the user instruction have been completed.\n\n"
+    
+    prompt += "### Output Format ###\n"
+    prompt += "Your output must be divided into the following three sections:\n"
+    prompt += "1. ### Thought ###\n   Describe your reasoning for the chosen operation based on the current state and history.\n"
+    prompt += "2. ### Action ###\n   Specify the single operation you will perform. Use the exact action name from the list above and include any parameters in parentheses. "
+    prompt += "If using an IF statement, include it at the end in the format 'IF [condition]'.\n"
+    prompt += "3. ### Summary ###\n   Provide a brief natural language summary of what this operation will accomplish (e.g., 'Select cells A1:D10 and apply left alignment').\n\n"
+    
+    prompt += "Ensure that the operation you choose will move the process closer to fulfilling the user's instruction.\n"
+
     return prompt
 
 
 def get_reflect_prompt(subtask_inst, excel_file_path, summary, action, add_info):
     excel_file = "Pretend excel file path is read and content is extracted to this string"
-
+    
     prompt = "### Background ###\n"    
-    prompt += "### Before the current operation ###\n"
-    #TODO : use before_action_excel_file
-
-    prompt += "### After the current operation ###\n"
-    #TODO
+    prompt += f"You are an Excel operating assistant reviewing the outcome of the recent operation for the instruction: \"{subtask_inst}\".\n"
     
-    #TODO: adjust anything specific to PC Agent to our Excel Agent
-    prompt += "### Current operation ###\n"
-    prompt += f"The user\'s instruction is: {subtask_inst}."
-    if add_info != "":
-        prompt += f"You also need to note the following requirements: {add_info}."
-    prompt += "In the process of completing the requirements of instruction, an operation is performed on the computer. Below are the details of this operation:\n"
-    prompt += "Operation thought: " + summary.split(" to ")[0].strip() + "\n"
-    prompt += "Operation action: " + action
-    prompt += "\n\n"
+    prompt += "### Before the Operation ###\n"
+    prompt += f"Before Excel file status: {before_action_excel_file}\n\n"
+    prompt += "Assume that the Excel file was in its previous state prior to the operation.\n\n"
     
-    prompt += "### Response requirements ###\n"
-    prompt += "Now you need to output the following content based on the screenshots before and after the current operation:\n"
-    prompt += "Whether the result of the \"Operation action\" meets your expectation of \"Operation thought\"?\n"
-    prompt += "A: The result of the \"Operation action\" meets my expectation of \"Operation thought\".\n"
-    prompt += "B: The \"Operation action\" results in a wrong page and I need to do something to correct this.\n"
-    prompt += "C: The \"Operation action\" produces no changes."
-    prompt += "\n\n"
+    prompt += "### After the Operation ###\n"
+    prompt += f"After Excel file status: {excel_file}\n\n"
+    prompt += "The operation has been executed. The Excel file now reflects the changes made.\n\n"
+   
+    prompt += "### Operation Details ###\n"
+    prompt += f"Operation Thought: {summary.split(' to ')[0].strip()}\n"
+    prompt += f"Operation Action: {action}\n\n"
     
-    prompt += "### Output format ###\n"
-    prompt += "Your output format is:\n"
-    prompt += "### Thought ###\nYour thought about the question\n"
-    prompt += "### Answer ###\nA or B or C"
+    if add_info:
+        prompt += "### Additional Requirements ###\n"
+        prompt += f"{add_info}\n\n"
+    
+    prompt += "### Response Requirements ###\n"
+    prompt += "Based on the difference between the before and after states (which you must conclude based on the operation details), decide whether the result meets your expectations.\n"
+    prompt += "Choose one of the following responses:\n"
+    prompt += "A: The result meets my expectations.\n"
+    prompt += "B: The result is incorrect and requires correction.\n"
+    prompt += "C: The operation produced no visible change.\n\n"
+    
+    prompt += "### Output Format ###\n"
+    prompt += "Your output should include:\n"
+    prompt += "1. ### Thought ###\n"
+    prompt += "   Provide your reasoning about why the result does or does not meet expectations.\n"
+    prompt += "2. ### Answer ###\n"
+    prompt += "   Output a single letter: A, B, or C, corresponding to your judgment.\n"
     
     return prompt
 
 
 def get_memory_prompt(insight):
     if insight != "":
-        prompt  = "### Important content ###\n"
+        prompt  = "### Important Content ###\n"
         prompt += insight
         prompt += "\n\n"
     
-        prompt += "### Response requirements ###\n"
+        prompt += "### Response Requirements ###\n"
         prompt += "Please think about whether there is any content closely related to ### Important content ### on the current page? If there is, please output the content. If not, please output \"None\".\n\n"
     
     else:
-        prompt  = "### Response requirements ###\n"
+        prompt  = "### Response Requirements ###\n"
         prompt += "Please think about whether there is any content closely related to user\'s instrcution on the current page? If there is, please output the content. If not, please output \"None\".\n\n"
     
-    prompt += "### Output format ###\n"
+    prompt += "### Output Format ###\n"
     prompt += "Your output format is:\n"
     prompt += "### Important content ###\nThe content or None. Please do not repeatedly output the information in ### Memory ###."
     
     return prompt
 
 def get_process_prompt(instruction, thought_history, summary_history, action_history, completed_content, add_info):
-    # TODO: change anything specific to PC Agent to our Excel Agent
     prompt = "### Background ###\n"
-    prompt += f"There is an user\'s instruction which is: {instruction}. You are an excel processing assistant and are operating the user\'s excel file.\n"
+    prompt += f"The user instruction is: \"{instruction}\".\n"
+    prompt += "You are an Excel operating assistant. You have executed a series of operations to fulfill the instruction.\n\n"
     
     if add_info != "":
         prompt += "### Hint ###\n"
@@ -177,38 +179,37 @@ def get_process_prompt(instruction, thought_history, summary_history, action_his
         prompt += "\n\n"
     
     if len(thought_history) > 1:
-        prompt += "### History operations ###\n"
-        prompt += "To complete the requirements of user\'s instruction, you have performed a series of operations. These operations are as follow:\n"
+        prompt += "### History of Operations ###\n"
+        prompt += "The following operations have been performed:\n"
         for i in range(len(summary_history)):
             operation = summary_history[i].split(" to ")[0].strip()
-            prompt += f"Step-{i+1}: [Operation thought: " + operation + "; Operation action: " + action_history[i] + "]\n"
+            prompt += f"Step {i+1}: [Thought: {thought_history[i]}; Action: {action_history[i]}; Summary: {operation}]\n"
         prompt += "\n"
         
-        prompt += "### Progress thinking ###\n"
+        prompt += "### Progress Thinking ###\n"
         prompt += "After completing the history operations, you have the following thoughts about the progress of user\'s instruction completion:\n"
         prompt += "Completed contents:\n" + completed_content + "\n\n"
         
-        prompt += "### Response requirements ###\n"
-        prompt += "Now you need to update the \"Completed contents\". Completed contents is a general summary of the current contents that have been completed based on the ### History operations ###.\n\n"
+        prompt += "### Response Requirements ###\n"
+        prompt += "Now you need to update the \"Completed contents\". Completed contents is a general summary of the current contents that have been completed based on the ### History of Operations ###.\n\n"
         
-        prompt += "### Output format ###\n"
+        prompt += "### Output Format ###\n"
         prompt += "Your output format is:\n"
-        prompt += "### Completed contents ###\nUpdated Completed contents. Don\'t output the purpose of any operation. Just summarize the contents that have been actually completed in the ### History operations ###."
+        prompt += "### Completed contents ###\nUpdated Completed contents. Don\'t output the purpose of any operation. Just summarize the contents that have been actually completed in the ### History of Operations ###."
         
     else:
-        prompt += "### Current operation ###\n"
+        prompt += "### Current Operation Summary ###\n"
         prompt += "To complete the requirements of user\'s instruction, you have performed an operation. Your operation thought and action of this operation are as follows:\n"
         prompt += f"Operation thought: {thought_history[-1]}\n"
         operation = summary_history[-1].split(" to ")[0].strip()
         prompt += f"Operation action: {operation}\n\n"
         
-        prompt += "### Response requirements ###\n"
+        prompt += "### Response Requirements ###\n"
         prompt += "Now you need to combine all of the above to generate the \"Completed contents\".\n"
         prompt += "Completed contents is a general summary of the current contents that have been completed. You need to first focus on the requirements of user\'s instruction, and then summarize the contents that have been completed.\n\n"
         
-        prompt += "### Output format ###\n"
+        prompt += "### Output Format ###\n"
         prompt += "Your output format is:\n"
         prompt += "### Completed contents ###\nGenerated Completed contents. Don\'t output the purpose of any operation. Just summarize the contents that have been actually completed in the ### Current operation ###.\n"
-        prompt += "(Please use English to output)"
         
     return prompt
