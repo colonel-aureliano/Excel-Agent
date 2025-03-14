@@ -44,8 +44,15 @@ def call_genaiapi(SYSTEM_PROMPT: str,
         return response.text
 
     elif genai_model.startswith("deepseek"):
-        #TODO
-        pass
+        logger.info('Calling DeepSeek API')
+
+        response = ai_client.chat.completions.create(
+            model=genai_model,
+            messages=[{"role": "system", "content": SYSTEM_PROMPT}] + CHATS,
+            temperature=temp,
+            stream=False
+        )
+        return response.choices[0].message.content
     
     else:
         raise ValueError("Invalid API Spec")
