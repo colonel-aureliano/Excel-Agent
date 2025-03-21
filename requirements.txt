@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+pydantic
+dataclasses
+fastapi[all]  # Includes CORS middleware, JSONResponse support, etc.
