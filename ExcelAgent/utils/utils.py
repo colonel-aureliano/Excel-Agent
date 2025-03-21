@@ -8,10 +8,10 @@ import time
 def get_logger(scope):
     logger = logging.getLogger(scope)
 
-    if os.environ["APP_ENV"] in ["local", "dev", "stage"]:
-        logging.basicConfig(level=logging.DEBUG)
-    else:
-        logging.basicConfig(level=logging.INFO)
+    # if os.environ["APP_ENV"] in ["local", "dev", "stage"]:
+    #     logging.basicConfig(level=logging.DEBUG)
+    # else:
+    logging.basicConfig(level=logging.INFO)
 
     return logger
 
