@@ -21,13 +21,10 @@ def process_message(request: SubtaskInstructionRequest):
     logger.info("Received message: "+ request.message)
     subtask_instruction = request.message
 
-    # assume message is “Delete any element from the fifth column that starts with a number”
-    actions_reponse = ActionsResponse()
-    actions_reponse.role = "assistant"
-    actions_reponse.message = "I have deleted any element from the fifth column that starts with a number"
-    actions_reponse.actions = [
-        Select(col1="E", row1=1, col2="E", row2=-1),
-        ToolAction(reg="^\d.*",tool="Delete"),
-    ]
-    return actions_reponse
+    #choose a sample based on the subtask_instruction
+    from .action_sequence_sample import sample_dispath
+    actions_response = sample_dispath(subtask_instruction)
+    
+    #TODO replace above with calling agent LLMs to create actual actions_response
 
+    return actions_response

@@ -17,7 +17,7 @@
    pip install -r requirements.txt
 
 ## Usage
-uvicorn main:app --host 127.0.0.1 --port 5000 --reload
+`uvicorn main:app --host 127.0.0.1 --port 5000 --reload`
 
 ## References
 https://github.com/X-PLUG/MobileAgent/tree/main/PC-Agent
