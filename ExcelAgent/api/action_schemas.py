@@ -23,8 +23,8 @@ class Select(Action):
     type: str = "Select"
     col1: str
     row1: int
-    col2: str
-    row2: int
+    col2: Optional[str] = None
+    row2: Optional[str] = None
 
     def _format_params(self):
         return f"{self.col1}{self.row1}:{self.col2}{self.row2}"
@@ -44,9 +44,35 @@ class SelectAndDrag(Action):
 class Format(Action):
     type: str = "Format"
     style: str
+    reg: Optional[str] = None  # Regular expression for matching cells
+    color: Optional[str] = None  # Used for background and font color
+    size: Optional[int] = None  # Used for font size
+    alignment: Optional[str] = None  # Used for horizontal/vertical alignment
+    border: Optional[Dict[str, bool]] = None  # Top, left, bottom, right, vertical, horizontal
+    wrap: Optional[bool] = None  # Whether text should wrap
+    format: Optional[str] = None  # Number format (e.g., currency, percentage)
 
-    def _format_params(self):
-        return self.style
+    def _format_params(self) -> str:
+        params = []
+        if self.style:
+            params.append(f"style: {self.style}")
+        if self.reg:
+            params.append(f"reg: {self.reg}")
+        if self.color:
+            params.append(f"color: {self.color}")
+        if self.size:
+            params.append(f"size: {self.size}")
+        if self.alignment:
+            params.append(f"alignment: {self.alignment}")
+        if self.border:
+            border_str = ", ".join(f"{key}: {value}" for key, value in self.border.items())
+            params.append(f"border: {{ {border_str} }}")
+        if self.wrap is not None:
+            params.append(f"wrap: {self.wrap}")
+        if self.format:
+            params.append(f"format: {self.format}")
+        
+        return ", ".join(params) if params else "No parameters set"
 
 
 class Set(Action):
@@ -147,6 +173,11 @@ if __name__ == "__main__":
         Terminate(),
         Format(style="Italic")  # Example without reg
     ]
+
+    format_action = Format(style="backgroundColor",
+        reg="^\\d+$",  # Matches numeric values
+        color="#FFFF00"  # Yellow background
+    )
 
     input_string = generate_action_string(actions)
     # input_string = "REGEX ^A.* | SELECT A1:B5; REGEX ^C.* | SELECTANDDRAG C2:D6; REGEX ^Bold.* | FORMAT Bold"

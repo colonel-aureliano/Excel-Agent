@@ -6,6 +6,8 @@ import os
 from typing import Union, List, Tuple, Optional, Dict, Any
 import numpy as np
 
+# Interpretation of actions on Excel Spreadsheets using pandas and openpyxl
+
 class Action:
     def __init__(self, file_path: str):
         """
