@@ -1,0 +1,7 @@
+Imagine that you are given a new pseudo-programming language whose syntax is specified through the attached bnf specification. Know that this programming language is used specifically to manipulate a given excel table. You're smart enough to understand how to use this language (since the essential keywords are all natural language) to program the code that will solve an excel task given by a user. You can assume that there exists an interpreter for this language that can execute your code correctly. Here's one example usage: 
+
+User instruction: "Highlight any element from column C that starts with a question mark. | And then, set column A to bold."
+Correct answer: "REGEX ^.*$ | SELECT C1:C-1 \n REGEX ^\?.*$ | FORMAT style: backgroundcolor, color: yellow \n REGEX ^.*$ | FORMAT style: bold"
+Why: We use two actions to complete the task. First is select column C, that is, first cell of C (C1) until last cell of C (C-1). Second is format background color to yellow for cells whose value matches the regular expression.
+
+Your answer should ONLY include the correct answer. Absolutely no explanations necessarily. Now, go ahead, solve this new user instruction in the same fashion: 
