@@ -24,7 +24,7 @@ def sample1():
     actions_reponse.role = "assistant"
     actions_reponse.message = "I have highlighted any element from column C that starts with a question mark"
     actions_reponse.actions = [
-        Select(col1="C", row1=1, col2="C", row2=-1),
+        Select(col1="C", row1=1, col2="C", row2=-1), # Frontend understands that C-1 means fetching last non-empty row of column C
         Format(
             style="backgroundcolor",
             color="yellow",  # Set the font color to blue

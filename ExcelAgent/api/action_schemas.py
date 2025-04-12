@@ -5,7 +5,7 @@ import re
 
 app = FastAPI()
 
-# Define a Base Action Model
+# Base Action Model
 class Action(BaseModel):
     type: str  # Defines the type of action (e.g., "Select", "Set", etc.)
     reg: Optional[str] = None  # Regular expression (optional)
@@ -18,24 +18,24 @@ class Action(BaseModel):
         return ""
 
 
-# Define Specific Actions
+# Specific Actions
 class Select(Action):
     type: str = "Select"
     col1: str
-    row1: int
+    row1: str
     col2: Optional[str] = None
     row2: Optional[str] = None
 
     def _format_params(self):
-        return f"{self.col1}{self.row1}:{self.col2}{self.row2}"
+        return f"{self.col1}{self.row1}:{self.col2}{self.row2}" if self.col2 and self.row2 else f"{self.col1}{self.row1}"
 
 
 class SelectAndDrag(Action):
     type: str = "SelectAndDrag"
     col1: str
-    row1: int
+    row1: str
     col2: str
-    row2: int
+    row2: str
 
     def _format_params(self):
         return f"{self.col1}{self.row1}:{self.col2}{self.row2}"
@@ -44,20 +44,17 @@ class SelectAndDrag(Action):
 class Format(Action):
     type: str = "Format"
     style: str
-    reg: Optional[str] = None  # Regular expression for matching cells
     color: Optional[str] = None  # Used for background and font color
     size: Optional[int] = None  # Used for font size
     alignment: Optional[str] = None  # Used for horizontal/vertical alignment
     border: Optional[Dict[str, bool]] = None  # Top, left, bottom, right, vertical, horizontal
     wrap: Optional[bool] = None  # Whether text should wrap
-    format: Optional[str] = None  # Number format (e.g., currency, percentage)
+    value_format: Optional[str] = None  # Value format (e.g., currency, percentage)
 
     def _format_params(self) -> str:
         params = []
         if self.style:
             params.append(f"style: {self.style}")
-        if self.reg:
-            params.append(f"reg: {self.reg}")
         if self.color:
             params.append(f"color: {self.color}")
         if self.size:
@@ -69,10 +66,10 @@ class Format(Action):
             params.append(f"border: {{ {border_str} }}")
         if self.wrap is not None:
             params.append(f"wrap: {self.wrap}")
-        if self.format:
-            params.append(f"format: {self.format}")
+        if self.value_format:
+            params.append(f"value_format: {self.value_format}")
         
-        return ", ".join(params) if params else "No parameters set"
+        return ", ".join(params) if params else ""
 
 
 class Set(Action):
@@ -103,69 +100,17 @@ class Terminate(Action):
     type: str = "Terminate"
     
     def _format_params(self):
-        return "No parameters"
+        return ""
 
-
-# Reverse Parsing Function
-def parse_action_string(action_str: str) -> List[Action]:
-    action_classes: Dict[str, Type[Action]] = {
-        "SELECT": Select,
-        "SELECTANDDRAG": SelectAndDrag,
-        "FORMAT": Format,
-        "SET": Set,
-        "TOOLACTION": ToolAction,
-        "TELLUSER": TellUser,
-        "TERMINATE": Terminate,
-    }
-
-    actions = []
-    action_strings = re.split(r"[\n;]+", action_str.strip())  # Split by newlines or semicolons
-    
-    for action_entry in action_strings:
-        match = re.match(r"REGEX (.*?) \| (\w+) (.+)", action_entry.strip())
-        if match:
-            reg, action_type, params = match.groups()
-            action_type = action_type.upper()
-            if action_type in action_classes:
-                
-                if action_type == "SELECT" or action_type == "SELECTANDDRAG":
-                    param_match = re.match(r"(\D+)(\d+):(\D+)(\d+)", params)
-                    if param_match:
-                        col1, row1, col2, row2 = param_match.groups()
-                        action = action_classes[action_type](reg=reg, col1=col1, row1=int(row1), col2=col2, row2=int(row2))
-                        actions.append(action)
-
-                elif action_type == "FORMAT":
-                    action = Format(reg=reg, style=params)
-                    actions.append(action)
-                
-                elif action_type == "SET":
-                    action = Set(reg=reg, text=params)
-                    actions.append(action)
-                
-                elif action_type == "TOOLACTION":
-                    action = ToolAction(reg=reg, tool=params)
-                    actions.append(action)
-                
-                elif action_type == "TELLUSER":
-                    action = TellUser(reg=reg, message=params)
-                    actions.append(action)
-                
-                elif action_type == "TERMINATE":
-                    action = Terminate(reg=reg)
-                    actions.append(action)
-
-    return actions
-
-def generate_action_string(actions: List[Action]) -> str:
+def action_list_to_str(actions: List[Action]) -> str:
     return "\n".join(action.to_string() for action in actions)
 
 
 # Example usage:
 if __name__ == "__main__":
     actions = [
-        Select(reg="^A.*", col1="A", row1=1, col2="B", row2=-1),
-        SelectAndDrag(reg="^C.*", col1="C", row1=2, col2="D", row2=6),
+        Select(reg="^A.*", col1="A", row1="1", col2="B", row2="-1"),
+        SelectAndDrag(reg="^C.*", col1="C", row1="2", col2="D", row2="6"),
         Format(style="Bold"),
         Set(text="Hello, World!"),
         ToolAction(tool="Copy"),
@@ -173,15 +118,19 @@ if __name__ == "__main__":
         Terminate(),
         Format(style="Italic")  # Example without reg
     ]
+    actions2 = [Select(col1="C", row1="1", col2="C", row2="-1"),
+        Format(
+            style="backgroundcolor",
+            color="#FFFF00",  # Yellow background
+            reg="^\\?.*$"  # Regex to match elements starting with a question mark
+    )]
 
-    format_action = Format(style="backgroundColor",
-        reg="^\\d+$",  # Matches numeric values
-        color="#FFFF00"  # Yellow background
-    )
+    input_string = action_list_to_str(actions)
+    print(input_string)
+    print("---------------------")
 
-    input_string = generate_action_string(actions)
     # input_string = "REGEX ^A.* | SELECT A1:B5; REGEX ^C.* | SELECTANDDRAG C2:D6; REGEX ^Bold.* | FORMAT Bold"
-
+    from action_reverse_parse import parse_action_string
     parsed_actions = parse_action_string(input_string)
     for action in parsed_actions:
         print(action.to_string())
