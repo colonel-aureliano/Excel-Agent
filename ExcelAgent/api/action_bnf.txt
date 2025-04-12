@@ -1,0 +1,57 @@
+<action_string> ::= <action_entry> (("\n") <action_entry>)*
+
+<action_entry> ::= "REGEX" <ws> <regex> <ws> "|" <ws> <typed_action>
+
+<typed_action> ::= <select_action>
+                 | <select_and_drag_action>
+                 | <format_action>
+                 | <set_action>
+                 | <tool_action>
+                 | <tell_user_action>
+                 | <terminate_action>
+
+<select_action> ::= "SELECT" <ws> <cell_ref> (":" <cell_ref>)?
+<select_and_drag_action> ::= "SELECTANDDRAG" <ws> <cell_ref> ":" <cell_ref>
+<set_action> ::= "SET" <ws> <text_param>
+<tool_action> ::= "TOOLACTION" <ws> <tool_name>
+<tell_user_action> ::= "TELLUSER" <ws> <message>
+<terminate_action> ::= "TERMINATE" <ws> ""
+<format_action> ::= "FORMAT" <ws> <format_params>
+
+<cell_ref> ::= <col> <row>
+
+<col> ::= <uppercase_letter>+
+<row> ::= <digit>+
+
+<text_param> ::= <any_text>
+<tool_name> ::= <any_text>
+<message> ::= <any_text>
+
+<format_params> ::= <format_kv> (", " <format_kv>)*
+
+<format_kv> ::= "style: " <style>
+              | "color: " <color_code>
+              | "size: " <digit>+
+              | "alignment: " <alignment>
+              | "wrap: " ("True" | "False")
+              | "value_format: " <value_format>
+              | "border: { " <border_kv> (", " <border_kv>)* " }"
+
+<style> ::= "bold" | "italic" | "underline" | "strikethrough" | "backgroundcolor" | "fontcolor" | "fontsize" | "horizontalalignment" | "verticalalignment" | "border" | "wraptext" | "numberformat"
+<alignment> ::= "left" | "center" | "right"
+<value_format> ::= <word>
+
+<border_kv> ::= <border_side> ": " ("True" | "False")
+<border_side> ::= "top" | "bottom" | "left" | "right"
+
+<color_code> ::= "#" <hex_digit> <hex_digit> <hex_digit> <hex_digit> <hex_digit> <hex_digit>
+
+<regex> ::= <any_non_pipe_characters>
+
+<any_non_pipe_characters> ::= (any character except "|")+
+<any_text> ::= (any character except newline and delimiter)
+<word> ::= (A-Z | a-z)+
+<digit> ::= "0".."9"
+<uppercase_letter> ::= "A".."Z"
+<ws> ::= (" ")+
+<hex_digit> ::= ("0".."9" | "A".."F" | "a".."f")
