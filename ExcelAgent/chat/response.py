@@ -2,9 +2,10 @@ from prompt import *
 from ExcelAgent.chat.api import *
 from chat import *
 from run import vl_model_version, API_url, token, args, memory, error_flag
+from ExcelAgent.agents import AgentState
 
-def action_agent_response(subtask_inst, excel_file_path, thought_history, summary_history, action_history, completed_requirements, add_info, reflection_thought):
-    prompt_action = get_action_prompt(subtask_inst, excel_file_path, thought_history, summary_history, action_history, summary, action, reflection_thought, add_info, error_flag, completed_requirements, memory, args.use_som, args.icon_caption, args.location_info)
+def action_agent_response(subtask_inst, excel_file_path, agent_state : AgentState, add_info):
+    prompt_action = get_action_prompt(subtask_inst, excel_file_path, agent_state, summary, action, args.use_som, args.icon_caption, args.location_info)
     
     chat_action = init_action_chat()
     chat_action = add_response("user", prompt_action, chat_action, [])
@@ -21,12 +22,13 @@ def action_agent_response(subtask_inst, excel_file_path, thought_history, summar
 
     return thought, summary, action
 
-def reflect_agent_response(subtask_inst, thought, summary, action, excel_file_path, thought_history, summary_history, action_history, completed_requirements, add_info):
+def reflect_agent_response(subtask_inst, thought, summary, action, excel_file_path, agent_state : AgentState, add_info):
     prompt_reflect = get_reflect_prompt(subtask_inst, [], [], 0, 0, summary, action, add_info)
     chat_reflect = init_reflect_chat()
     chat_reflect = add_response("user", prompt_reflect, chat_reflect, [])
 
     output_reflect = inference_chat(chat_reflect, vl_model_version, API_url, token)
+    # reflection_thought - can be replace with agent_state.reflection_thought, with no return 
     reflection_thought = output_reflect.split("### Thought ###")[-1].split("### Answer ###")[0].replace("\n", " ").strip()
     reflect = output_reflect.split("### Answer ###")[-1].replace("\n", " ").strip()
     chat_reflect = add_response("assistant", output_reflect, chat_reflect)
@@ -36,11 +38,12 @@ def reflect_agent_response(subtask_inst, thought, summary, action, excel_file_pa
     print('#' * len(status))
 
     if 'A' in reflect:
-        thought_history.append(thought)
-        summary_history.append(summary)
-        action_history.append(action)
+        agent_state.thought_history.append(thought)
+        agent_state.summary_history.append(summary)
+        agent_state.action_history.append(action)
         
-        prompt_planning = get_process_prompt(subtask_inst, thought_history, summary_history, action_history, completed_requirements, add_info)
+        # prompt_planning = get_process_prompt(subtask_inst, thought_history, summary_history, action_history, completed_requirements, add_info)
+        prompt_planning = get_process_prompt(subtask_inst, agent_state, add_info)
         chat_planning = init_memory_chat()
         chat_planning = add_response("user", prompt_planning, chat_planning)
         output_planning = inference_chat(chat_planning, 'gpt-4o', API_url, token)
@@ -49,7 +52,7 @@ def reflect_agent_response(subtask_inst, thought, summary, action, excel_file_pa
         print(status)
         print(output_planning)
         print('#' * len(status))
-        completed_requirements = output_planning.split("### Completed contents ###")[-1].replace("\n", " ").strip()
+        agent_state.completed_requirements = output_planning.split("### Completed contents ###")[-1].replace("\n", " ").strip()
         
         error_flag = False
     
@@ -62,11 +65,12 @@ def reflect_agent_response(subtask_inst, thought, summary, action, excel_file_pa
         # presskey('esc')
 
     else:
-        thought_history.append(thought)
-        summary_history.append(summary)
-        action_history.append(action)
+        agent_state.thought_history.append(thought)
+        agent_state.summary_history.append(summary)
+        agent_state.action_history.append(action)
         
-        prompt_planning = get_process_prompt(subtask_inst, thought_history, summary_history, action_history, completed_requirements, add_info)
+        # prompt_planning = get_process_prompt(subtask_inst, thought_history, summary_history, action_history, completed_requirements, add_info)
+        prompt_planning = get_process_prompt(subtask_inst, agent_state, add_info)
         chat_planning = init_memory_chat()
         chat_planning = add_response("user", prompt_planning, chat_planning)
         output_planning = inference_chat(chat_planning, 'gpt-4o', API_url, token)
@@ -75,6 +79,6 @@ def reflect_agent_response(subtask_inst, thought, summary, action, excel_file_pa
         print(status)
         print(output_planning)
         print('#' * len(status))
-        completed_requirements = output_planning.split("### Completed contents ###")[-1].replace("\n", " ").strip()
+        agent_state.completed_requirements = output_planning.split("### Completed contents ###")[-1].replace("\n", " ").strip()
     
     return reflection_thought

@@ -8,6 +8,7 @@ from ExcelAgent.chat.api import inference_chat
 from ExcelAgent.chat.prompt import get_manager_initial_prompt, get_memory_prompt
 from ExcelAgent.chat.chat import init_action_chat, init_reflect_chat, init_memory_chat, add_response
 from ExcelAgent.chat.response import action_agent_response, reflect_agent_response
+from ExcelAgent.agents.agent_state import AgentState
 
 from modelscope import snapshot_download, AutoModelForCausalLM, AutoTokenizer, GenerationConfig
 
@@ -106,19 +107,21 @@ else:
 
 ###################################################################################################
 
-thought_history = []
-summary_history = []
-action_history = []
-reflection_thought = ""
-completed_requirements = ""
-memory = ""
-insight = ""
-temp_file = "temp"
+# thought_history = []
+# summary_history = []
+# action_history = []
+# reflection_thought = ""
+# completed_requirements = ""
+# memory = ""
+# insight = ""
+# temp_file = "temp"
 
-if os.path.exists(temp_file):
-    shutil.rmtree(temp_file)
-os.mkdir(temp_file)
-error_flag = False
+# if os.path.exists(temp_file):
+#     shutil.rmtree(temp_file)
+# os.mkdir(temp_file)
+# error_flag = False
+
+agent_state = AgentState()
 
 ###################################################################################################
 
@@ -128,20 +131,23 @@ iter = 0
 while True:
     iter += 1
 
-    prompt_manager = get_manager_initial_prompt(instruction, excel_file_path, thought_history, summary_history, action_history, completed_requirements, add_info)
+    prompt_manager = get_manager_initial_prompt(instruction, excel_file_path, agent_state, add_info)
+    # prompt_manager = get_manager_initial_prompt(instruction, excel_file_path, thought_history, summary_history, action_history, completed_requirements, add_info)
+    prompt_manager = get_manager_initial_prompt(instruction, excel_file_path, agent_state, add_info)
     manager_agent_response = "..." # assume this is the response from the manager agent
     subtask_list = ["...", "..."] # assume this is the subtask list extracted from the manager agent response
     print("Subtask list: ", subtask_list)
 
     for subtask_inst in subtask_list:
-        thought, summary, action = action_agent_response(subtask_inst, excel_file_path, thought_history, summary_history, action_history, completed_requirements, add_info, reflection_thought)
+        # thought, summary, action = action_agent_response(subtask_inst, excel_file_path, thought_history, summary_history, action_history, completed_requirements, add_info, reflection_thought)
+        thought, summary, action = action_agent_response(subtask_inst, excel_file_path, agent_state, add_info)
 
         # act on action
     
         time.sleep(2) # wait for the action to be excuted
 
         if memory_switch:
-            prompt_memory = get_memory_prompt(insight)
+            prompt_memory = get_memory_prompt(agent_state.insight)
             chat_action = add_response("user", prompt_memory, chat_action)
             output_memory = inference_chat(chat_action, vl_model_version, API_url, token)
             chat_action = add_response("assistant", output_memory, chat_action)
@@ -150,8 +156,8 @@ while True:
             print(output_memory)
             print('#' * len(status))
             output_memory = output_memory.split("### Important content ###")[-1].split("\n\n")[0].strip() + "\n"
-            if "None" not in output_memory and output_memory not in memory:
-                memory += output_memory
+            if "None" not in output_memory and output_memory not in agent_state.memory:
+                agent_state.memory += output_memory
         
         if reflection_switch:
-            reflection_thought = reflect_agent_response(thought, summary, action, excel_file_path, thought_history, summary_history, action_history, completed_requirements, add_info)
+            agent_state.reflection_thought = reflect_agent_response(thought, summary, action, excel_file_path, agent_state, add_info)
