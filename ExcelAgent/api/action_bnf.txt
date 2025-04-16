@@ -1,4 +1,4 @@
-<action_string> ::= <action_entry> (("\n") <action_entry>)*
+<action_string> ::= <action_entry> ((";") <action_entry>)*
 
 <action_entry> ::= "REGEX" <ws> <regex> <ws> "|" <ws> <typed_action>
 

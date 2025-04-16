@@ -103,7 +103,7 @@ class Terminate(Action):
         return ""
 
 def action_list_to_str(actions: List[Action]) -> str:
-    return "\n".join(action.to_string() for action in actions)
+    return " ; ".join(action.to_string() for action in actions)
 
 
 # Example usage:
