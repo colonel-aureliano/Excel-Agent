@@ -1,6 +1,7 @@
 import re
 from typing import List, Optional
-from action_schemas import *
+from .action_schemas import *
+from .exceptions import ActionStrParseError
 
 cell_ref_pattern = r"([A-Z]+)(-?\d+)"
 regex_entry = r"REGEX\s+([^|]+)\s*\|\s*(.*)"
@@ -55,7 +56,7 @@ def parse_format_params(param_str: str):
 def parse_action_entry(entry: str) -> Optional[object]:
     match = re.fullmatch(regex_entry, entry.strip())
     if not match:
-        return None
+        raise ActionStrParseError(f"Invalid action entry: {entry}")
     reg, action_part = match.groups()
     reg = reg.strip()
     action_part = action_part.strip()
@@ -91,28 +92,35 @@ def parse_action_entry(entry: str) -> Optional[object]:
 
     elif action_part.startswith("TERMINATE"):
         return Terminate(type="Terminate", reg=reg)
-
-    return None
+    
+    raise ActionStrParseError(f"Invalid action entry: {entry}")
 
 def parse_action_string(action_string: str) -> List[object]:
-    action_entries = re.split(r";|\n", action_string)
-    parsed_actions = []
-    for entry in action_entries:
-        if entry.strip():
-            action = parse_action_entry(entry)
-            if action:
-                parsed_actions.append(action)
+    try: 
+        action_entries = re.split(r";|\n", action_string)
+        parsed_actions = []
+        for entry in action_entries:
+            if entry.strip():
+                action = parse_action_entry(entry)
+                if action:
+                    parsed_actions.append(action)
+    except Exception as e:
+        print(f"Error parsing action string: {action_string}")
+        raise ActionStrParseError(f"Error parsing action string: {e}")
     return parsed_actions
 
 if __name__ == "__main__":
-    from action_schemas import action_list_to_str
+    from .action_schemas import action_list_to_str
     actions = [Select(col1="C", row1="1", col2="C", row2="-1"),
         Format(
             style="backgroundcolor",
-            color="yellow",  # Set the font color to blue
+            color="yellow", 
             reg="^\\?.*$"  # Regex to match elements starting with a question mark
-        )]
+        ),
+        TellUser(message="I have set background color to yellow for cells that start with question mark in column C.")
+    ]
     act_str = action_list_to_str(actions)
     print(act_str)
+    # act_str = "asdf"  # malformed
     actions = parse_action_string(act_str)
     print(actions)
