@@ -34,12 +34,13 @@ function fetchAndProcessActions(message) {
 
     const jsonData = JSON.parse(text);
     Logger.log("Parsed JSON: " + JSON.stringify(jsonData));
-
+    
+    var tell_user_message = jsonData.message;
     if (jsonData.actions) {
-      processSequentialActions(jsonData.actions);
+      tell_user_message = processSequentialActions(jsonData.actions);
     }
 
-    return jsonData.message || "No message returned from API.";
+    return tell_user_message || "No message returned from API.";
   } catch (e) {
     Logger.log("Error fetching data: " + e.toString());
     return "An error occurred while contacting the API.";

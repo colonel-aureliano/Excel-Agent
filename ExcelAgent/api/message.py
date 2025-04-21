@@ -47,6 +47,7 @@ def process_message(request: SubtaskInstructionRequest):
     except ActionStrParseError as e:
         logger.error("Error parsing actions: " + str(e))
         success = False
+        actions = []
     actions_response = ActionsResponse(
         role="assistant",
         message="success" if success else "error",

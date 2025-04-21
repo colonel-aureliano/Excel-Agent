@@ -4,6 +4,10 @@ import base64
 import requests
 import time
 
+log_dir = "logs"
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir)
+log_file = os.path.join(log_dir, time.strftime("%Y-%m-%d_%H-%M-%S.log"))
 
 def get_logger(scope):
     logger = logging.getLogger(scope)
@@ -12,11 +16,7 @@ def get_logger(scope):
     #     logging.basicConfig(level=logging.DEBUG)
     # else:
     logging.basicConfig(level=logging.INFO)
-    log_dir = "logs"
-    os.makedirs(log_dir, exist_ok=True)
-    log_file = os.path.join(log_dir, f"{scope}_{int(time.time())}.log")
     file_handler = logging.FileHandler(log_file)
-    file_handler.setLevel(logging.INFO)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
