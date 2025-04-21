@@ -25,8 +25,10 @@ def process_message(request: MessageRequest):
 # Returns an action sequence
 @router.post("/subtask-process", response_model=ActionsResponse)
 def process_message(request: SubtaskInstructionRequest):
-    logger.info("Received message: "+ request.message)
     subtask_instruction = request.message
+    first_n_rows_of_sheet = request.first_n_rows_of_sheet
+    logger.info("Received subtask_instruction: "+ subtask_instruction)
+    logger.info("First n rows of sheet: " + str(first_n_rows_of_sheet))
 
     # Choose a sample based on the subtask_instruction
     # actions_response = sample_dispath(subtask_instruction)
@@ -37,7 +39,7 @@ def process_message(request: SubtaskInstructionRequest):
     # use parse_action_string to parse it into list of actions, ready to be sent to front-end
 
     #TODO replace the below with calling 3 agent LLMs
-    actions_response = gemini_one_shot_response(subtask_instruction)
+    actions_response = gemini_one_shot_response(subtask_instruction, first_n_rows_of_sheet)
     logger.info("Actions response: " + str(actions_response))
     success = True
     try: 

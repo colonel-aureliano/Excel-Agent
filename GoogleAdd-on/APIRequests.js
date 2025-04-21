@@ -9,7 +9,8 @@ function fetchAndProcessActions(message) {
   const lastCol = sheet.getLastColumn();
   const firstNRows = sheet
     .getRange(1, 1, DEFAULT_ROW_COUNT, lastCol)
-    .getValues();
+    .getValues()
+    .map(row => row.map(cell => String(cell)));
 
   const apiUrl = apiUrlBase + "/subtask-process";
   const options = {

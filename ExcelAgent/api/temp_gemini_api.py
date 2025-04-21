@@ -1,5 +1,8 @@
 import os
 import google.generativeai as genai
+from ..utils.utils import get_logger
+
+logger = get_logger(__name__)
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 one_shot_prompt_path = os.path.join(script_dir, "one_shot_prompt.txt")
@@ -18,14 +21,23 @@ file = genai.upload_file(os.path.join(script_dir, "action_bnf.txt"))
 
 first_chat = True
 
-def gemini_one_shot_response(subtask_instruction):
+def gemini_one_shot_response(subtask_instruction, first_n_rows_of_sheet=None):
+    first_n_rows_of_sheet = str(first_n_rows_of_sheet)
+    continuing_prompt = f"Now, go ahead, solve this new user instruction in the same fashion: {subtask_instruction}."
+    if first_n_rows_of_sheet:
+        continuing_prompt += f"Also you may or may not need this, but here are the first several rows of the user's sheet up to the last nonempty column: {first_n_rows_of_sheet}"
     global first_chat
+    message = None
     if first_chat:
-        response = chat.send_message([file, "\n\n", one_shot_prompt + subtask_instruction])
+        message = [file, "\n\n", one_shot_prompt + continuing_prompt]
         first_chat = False
     else:
-        response = chat.send_message(one_shot_prompt + subtask_instruction)
+        message = [continuing_prompt]
+    
+    response = chat.send_message(message)
 
+    logger.info("Prompt sent to Gemini API: " + str(message))
+    logger.info("Response from Gemini API: " + response.text)
     return response.text
 
 if __name__ == "__main__":

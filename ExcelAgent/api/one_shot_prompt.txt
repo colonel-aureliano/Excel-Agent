@@ -8,4 +8,4 @@ User instruction: Format to bold the elements in column I until row 100 that are
 Correct answer: REGEX ^.*$ | SELECT I1:I100 ; REGEX ^([5-9][0-9]{3}|[1-9][0-9]{4,}).*$ | FORMAT style: Bold ; REGEX ^.*$ | TELLUSER I have formatted to bold the appropriate elements.
 Explanation: First action selects column I through the 100th row. Second action uses regular expression to match cells with values greater than 5000 and format them to bold. Third action tells user you're done.
 
-Your answer should ONLY include the correct answer. Absolutely no explanations necessarily. Now, go ahead, solve this new user instruction in the same fashion: 
+Your answer should ONLY include the correct answer. Absolutely no explanations necessarily.

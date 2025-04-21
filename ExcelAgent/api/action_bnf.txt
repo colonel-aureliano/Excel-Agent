@@ -24,7 +24,7 @@
 <row> ::= <digit>+
 
 <text_param> ::= <any_text>
-<tool_name> ::= <any_text>
+<tool_name> ::= "copy" | "paste" | "pasteasvalues" | "delete"
 <message> ::= <any_text>
 
 <format_params> ::= <format_kv> (", " <format_kv>)*
