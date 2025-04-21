@@ -17,8 +17,8 @@ class MessageResponse(BaseModel):
 class SubtaskInstructionRequest(BaseModel):
     role: str
     message: str
-    #TODO: first_n_rows_of_sheet (2d data structure)
     #TODO: feed first_n_rows_of_sheet into LLM, adjust prompt accordingly
+    first_n_rows_of_sheet: List[List[Union[str, int, float, bool, None]]] = Field(default=None)
 
 class Action(BaseModel):
     type: str  # Defines the type of action (e.g., "Select", "Set", etc.)
