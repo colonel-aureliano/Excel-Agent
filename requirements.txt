@@ -1,7 +1,26 @@
-fastapi
-uvicorn
-pydantic
-dataclasses
-fastapi[all]  # Includes CORS middleware, JSONResponse support, etc.
+fastapi>=0.110,<0.115
+uvicorn[standard]>=0.27,<0.32
+pydantic>=2.6,<3
+requests>=2.31,<3
 
-google-generativeai
+# LLM / model utilities (OPTIONAL - only needed if caption_call_method="local")
+# Uncomment the lines below if you plan to use local model captioning:
+# packaging>=23.0
+# modelscope>=1.15,<2
+# torch>=2.3,<3
+# transformers>=4.30
+# peft>=0.4
+# diffusers>=0.18
+
+# UI automation utilities (used by key stroke/mouse handling)
+pyautogui>=0.9.54,<1
+pynput>=1.7,<2
+pyperclip>=1.8,<2
+pillow>=10,<12
+
+# Google Gemini API client
+google-generativeai>=0.8,<1
+
+# Excel file handling
+pandas>=2.0,<3
+openpyxl>=3.0,<4

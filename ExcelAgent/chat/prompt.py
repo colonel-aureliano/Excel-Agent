@@ -1,5 +1,7 @@
+from ExcelAgent.utils.utils import read_excel_file
+
 def get_manager_initial_prompt(instruction, excel_file_path, thought_history, summary_history, action_history, completed_content, add_info):
-    excel_file = "Pretend the excel file path is read and content is extracted to this string"
+    excel_file = read_excel_file(excel_file_path)
     
     prompt = "### Background ###\n"
     prompt += f"The user has provided the following instruction: \"{instruction}\".\n"
@@ -31,7 +33,8 @@ def get_manager_initial_prompt(instruction, excel_file_path, thought_history, su
 before_action_excel_file = ""
 
 def get_action_prompt(subtask_instruction, excel_file_path, thought_history, summary_history, action_history, last_summary, last_action, reflection_thought, add_info, error_flag, completed_content, memory, use_som, icon_caption, location_info):
-    excel_file = "Pretend excel file path is read and content is extracted to this string"
+    global before_action_excel_file
+    excel_file = read_excel_file(excel_file_path)
     before_action_excel_file = excel_file
     
     prompt = "### Background ###\n"
@@ -110,7 +113,7 @@ def get_action_prompt(subtask_instruction, excel_file_path, thought_history, sum
 
 
 def get_reflect_prompt(subtask_inst, excel_file_path, summary, action, add_info):
-    excel_file = "Pretend excel file path is read and content is extracted to this string"
+    excel_file = read_excel_file(excel_file_path)
     
     prompt = "### Background ###\n"    
     prompt += f"You are an Excel operating assistant reviewing the outcome of the recent operation for the instruction: \"{subtask_inst}\".\n"
