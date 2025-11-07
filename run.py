@@ -9,6 +9,7 @@ from ExcelAgent.chat.prompt import get_manager_initial_prompt, get_memory_prompt
 from ExcelAgent.chat.chat import init_action_chat, init_reflect_chat, init_memory_chat, add_response
 from ExcelAgent.chat.response import action_agent_response, reflect_agent_response
 from ExcelAgent.agents.agent_state import AgentState
+from ExcelAgent.utils.action_executor import ActionExecutor
 
 import argparse
 
@@ -100,6 +101,9 @@ else:
     # instruction = "Help me download the pdf version of the 'Mobile Agent v2' paper on Chrome."
 
 excel_file_path = args.excel_file_path
+instruction_queue = []
+if instruction and instruction.strip():
+    instruction_queue.append(instruction.strip())
 
 # Choose between "api" and "local". api: use the qwen api. local: use the local qwen checkpoint
 caption_call_method = "api"
@@ -179,21 +183,35 @@ agent_state.temperature = temperature
 
 ###################################################################################################
 
+# Initialize the Excel Action Executor
+try:
+    action_executor = ActionExecutor(excel_file_path)
+    print(f"✅ Loaded Excel file: {excel_file_path}")
+    print(action_executor.get_sheet_summary(5))
+    print()
+except Exception as e:
+    print(f"❌ Error loading Excel file: {e}")
+    exit(1)
+
+###################################################################################################
+
 # Start main loop
 
 iter = 0
 prev_subtask_list = None
 stagnation = 0
 done = False
-while True:
+while instruction_queue and not done:
     iter += 1
+
+    current_instruction = instruction_queue.pop(0)
 
     if iter > args.max_iters:
         print(f"Max iterations reached: {args.max_iters}. Exiting.")
         break
 
     prompt_manager = get_manager_initial_prompt(
-        instruction,
+        current_instruction,
         excel_file_path,
         agent_state.thought_history,
         agent_state.summary_history,
@@ -204,7 +222,7 @@ while True:
     # TODO: Replace with real manager LLM call and parsing to subtask_list
     # For now, use the instruction directly as a single subtask to bypass the manager agent
     manager_agent_response = "..."
-    subtask_list = [instruction]  # Use actual instruction instead of placeholder
+    subtask_list = [current_instruction]  # Use actual instruction instead of placeholder
     print("Subtask list: ", subtask_list)
 
     if prev_subtask_list == subtask_list:
@@ -215,6 +233,8 @@ while True:
     else:
         stagnation = 0
         prev_subtask_list = subtask_list
+
+    enqueued_new_instruction = False
 
     for subtask_inst in subtask_list:
         thought, summary, action = action_agent_response(
@@ -235,10 +255,10 @@ while True:
                 print(f"\n🤖 Agent: {message}")
                 user_response = input("👤 Your response: ").strip()
                 
-                # Update instruction with user's response
+                # Queue the user's response as the next instruction
                 if user_response:
-                    instruction = user_response
-                    print(f"\nContinuing with your instruction: {instruction}\n")
+                    instruction_queue.insert(0, user_response)
+                    print(f"\nContinuing with your instruction: {user_response}\n")
                     
                     # Record the interaction in agent state
                     agent_state.thought_history.append(thought)
@@ -255,6 +275,10 @@ while True:
                     agent_state.error_flag = False
                     agent_state.reflection_thought = ""
                     
+                    prev_subtask_list = None
+                    stagnation = 0
+                    enqueued_new_instruction = True
+
                     # Continue to next iteration with updated instruction
                     break  # Break from subtask loop to restart with new instruction
                 else:
@@ -262,9 +286,38 @@ while True:
                     done = True
                     break
 
-        # TODO: Execute the parsed 'action' against Excel here
+        # Execute the action on the Excel file
+        try:
+            print(f"📋 Executing action: {action}")
+            success, result = action_executor.parse_and_execute(action)
+            
+            if success:
+                print(f"✅ Action executed successfully: {result}")
+                
+                # Save the file after successful operation (except for Tell User actions)
+                if "Tell User" not in action and "TellUser" not in action:
+                    save_success, save_result = action_executor.save()
+                    if save_success:
+                        print(f"💾 File saved: {save_result}")
+                    else:
+                        print(f"⚠️ Warning: Could not save file: {save_result}")
+                
+                # Show updated sheet summary for verification
+                if "Select" in action:
+                    print("\n" + "="*80)
+                    print(action_executor.get_sheet_summary(10))
+                    print("="*80 + "\n")
+            else:
+                print(f"❌ Action execution failed: {result}")
+                agent_state.error_flag = True
+                
+        except Exception as e:
+            print(f"❌ Error during action execution: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            agent_state.error_flag = True
 
-        time.sleep(2)  # wait for the action to be executed
+        time.sleep(1)  # Brief pause for output visibility
 
         if "Terminate" in action:
             print("Terminate action detected. Exiting.")
@@ -300,4 +353,11 @@ while True:
             )
 
     if done:
+        break
+
+    if enqueued_new_instruction:
+        continue
+
+    if not instruction_queue:
+        print("All subtasks processed. Exiting.")
         break
