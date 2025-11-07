@@ -83,7 +83,9 @@ def get_action_prompt(subtask_instruction, excel_file_path, thought_history, sum
     prompt += "You must choose one of the actions below, optionally with an IF condition:\n\n"
     
     prompt += "1. Select: Select one or more boxes by specifying four parameters (col1, row1, col2, row2) that delineate the region of selection. "
-    prompt += "**IMPORTANT: When you Select a range, it is automatically highlighted with a yellow background color in the file. No additional formatting action is needed.** "
+    prompt += "**IMPORTANT: The row and column parameters use 0-based indexing matching the DataFrame indices shown in the Excel file summary. "
+    prompt += "For example, if the summary shows row index 0 as the first data row, row index 1 as the second data row, etc., use those same indices in Select. "
+    prompt += "When you Select a range, it is automatically highlighted with a yellow background color in the file. No additional formatting action is needed.** "
     prompt += "Optionally, append an IF statement to filter the selection (e.g., IF cell value > 10).\n\n"
     
     prompt += "2. Select and Drag: Select a cell's fill handle and drag it to fill a range, defined by four parameters (col1, row1, col2, row2). "

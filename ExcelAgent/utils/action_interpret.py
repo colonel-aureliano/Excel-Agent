@@ -35,25 +35,45 @@ class Action:
             print(f"DataFrame shape before saving: {self.df.shape}")
             print(f"DataFrame has data: {not self.df.empty}")
             
-            # Try both methods for redundancy
+            # First, sync DataFrame data to the openpyxl workbook
+            # This ensures the workbook has the latest data before we save
             try:
-                # Save with pandas
-                self.df.to_excel(save_path, index=False, engine='openpyxl')
-                print("Saved with pandas successfully")
-            except Exception as e:
-                print(f"Error saving with pandas: {e}")
-            
-            try:
-                # Also save with openpyxl (with data sync)
+                # Clear any extra rows beyond the DataFrame size
+                # Get the current max row in the sheet
+                max_row = self.active_sheet.max_row
+                df_rows = len(self.df)
+                
+                # Delete any rows beyond the DataFrame size (but keep header row)
+                if max_row > df_rows + 1:  # +1 for header row
+                    self.active_sheet.delete_rows(df_rows + 2, max_row - df_rows - 1)
+                
+                # Sync DataFrame data to workbook cells
                 for r in range(len(self.df)):
                     for c in range(len(self.df.columns)):
-                        cell = self.active_sheet.cell(row=r+1, column=c+1)
+                        cell = self.active_sheet.cell(row=r+2, column=c+1)  # +2 because row 1 is header
                         cell.value = self.df.iloc[r, c]
                 
+                # Update header row if needed
+                for c, col_name in enumerate(self.df.columns):
+                    header_cell = self.active_sheet.cell(row=1, column=c+1)
+                    if header_cell.value != col_name:
+                        header_cell.value = col_name
+                
+                # Save with openpyxl (preserves formatting like highlighting)
                 self.workbook.save(save_path)
                 print("Saved with openpyxl successfully")
             except Exception as e:
                 print(f"Error saving with openpyxl: {e}")
+                # Fallback: save with pandas if openpyxl fails
+                try:
+                    self.df.to_excel(save_path, index=False, engine='openpyxl')
+                    print("Saved with pandas (fallback) successfully")
+                    # Reload workbook after pandas save to keep references in sync
+                    self.workbook = openpyxl.load_workbook(save_path)
+                    self.active_sheet = self.workbook.active
+                except Exception as e2:
+                    print(f"Error saving with pandas fallback: {e2}")
+                    raise
             
             return f"File saved to {save_path}"
         except Exception as e:
@@ -66,10 +86,11 @@ class Action:
         
         Args:
             col: Column reference (either as letter 'A' or number 1)
-            row: Row reference (1-indexed as in Excel)
+            row: Row reference (1-indexed as in Excel, where row 1 is header, row 2 is first data row)
             
         Returns:
-            Tuple of (row_idx, col_idx) zero-indexed for pandas
+            Tuple of (row_idx, col_idx) zero-indexed for pandas DataFrame
+            DataFrame row 0 corresponds to Excel row 2 (first data row)
         """
         # Convert column to index if it's a letter
         if isinstance(col, str) and col.isalpha():
@@ -78,8 +99,9 @@ class Action:
             # Convert to 0-indexed
             col_idx = int(col) - 1
         
-        # Convert row to 0-indexed
-        row_idx = int(row) - 1
+        # Convert Excel row to DataFrame row index (0-based)
+        # Excel row 1 = header, Excel row 2 = DataFrame row 0, Excel row 3 = DataFrame row 1, etc.
+        row_idx = int(row) - 2
         
         return row_idx, col_idx
     
@@ -88,14 +110,15 @@ class Action:
         Convert zero-indexed row and column indices to Excel-style cell reference.
         
         Args:
-            row_idx: Zero-indexed row
-            col_idx: Zero-indexed column
+            row_idx: Zero-indexed DataFrame row index (0 = first data row)
+            col_idx: Zero-indexed column index
             
         Returns:
-            Excel-style cell reference (e.g., 'A1')
+            Excel-style cell reference (e.g., 'A2' for first data row, since row 1 is header)
         """
         col_letter = get_column_letter(col_idx + 1)
-        return f"{col_letter}{row_idx + 1}"
+        # DataFrame row 0 maps to Excel row 2 (row 1 is header)
+        return f"{col_letter}{row_idx + 2}"
     
     def select(self, col1: Union[str, int], row1: Union[str, int], 
                col2: Optional[Union[str, int]] = None, row2: Optional[Union[str, int]] = None,

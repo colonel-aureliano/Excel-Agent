@@ -21,12 +21,12 @@ parser.add_argument('--pc_type', type=str, default="mac") # windows or mac
 
 # Model selection arguments
 parser.add_argument('--model_provider', type=str, default='gemini', 
-                    choices=['openai', 'gemini', 'deepseek', 'claude'],
-                    help="LLM provider to use (default: gemini)")
+                    choices=['openai', 'gemini', 'deepseek', 'claude', 'nvidia', 'auto'],
+                    help="LLM provider to use (default: gemini, 'auto' to detect from api_url)")
 parser.add_argument('--model_name', type=str, default='gemini-2.0-flash-exp',
                     help="Specific model name (default: gemini-2.0-flash-exp)")
-parser.add_argument('--api_key', type=str, help="API key for the selected model provider (or set GEMINI_API_KEY/OPENAI_API_KEY env var)")
-parser.add_argument('--api_url', type=str, help="Optional: Custom API URL (for OpenAI-compatible APIs)")
+parser.add_argument('--api_key', type=str, help="API key for the selected model provider (can be env var name like NVIDIA_API_KEY or actual key)")
+parser.add_argument('--api_url', type=str, help="Optional: Custom API URL (for OpenAI-compatible APIs, e.g., https://integrate.api.nvidia.com/v1)")
 parser.add_argument('--temperature', type=float, default=0.0, help="Model temperature (default: 0.0)")
 
 # Legacy arguments for backwards compatibility
@@ -51,6 +51,9 @@ else:
 
 ####################################### Model Configuration #########################################
 
+# Import API utilities for key resolution and provider detection
+from ExcelAgent.chat.api import _resolve_api_key, _detect_provider_from_url
+
 # Handle API key from args or environment
 api_key = args.api_key or args.api_token
 if not api_key:
@@ -60,13 +63,20 @@ if not api_key:
         'gemini': 'GEMINI_API_KEY',
         'openai': 'OPENAI_API_KEY',
         'claude': 'CLAUDE_API_KEY',
-        'deepseek': 'DEEPSEEK_API_KEY'
+        'deepseek': 'DEEPSEEK_API_KEY',
+        'nvidia': 'NVIDIA_API_KEY'
     }
     env_var = env_key_map.get(args.model_provider, 'GEMINI_API_KEY')
     api_key = os.environ.get(env_var)
     if not api_key:
         print(f"Error: No API key provided. Please set {env_var} environment variable or use --api_key argument.")
         exit(1)
+
+# Resolve API key (handles env var names)
+api_key = _resolve_api_key(api_key)
+if not api_key:
+    print(f"Error: Could not resolve API key. Please provide a valid API key or environment variable name.")
+    exit(1)
 
 # Set up model configuration
 model_provider = args.model_provider
@@ -76,13 +86,20 @@ temperature = args.temperature
 # Set API URL based on provider if not explicitly provided
 if args.api_url:
     api_url = args.api_url
+    # Auto-detect provider from URL if provider is 'auto' or not explicitly set
+    if model_provider == 'auto' or (model_provider == 'gemini' and api_url):
+        detected_provider = _detect_provider_from_url(api_url)
+        if detected_provider:
+            model_provider = detected_provider
+            print(f"🔍 Auto-detected provider: {model_provider} from API URL")
 else:
     # Default URLs for different providers
     api_url_map = {
-        'openai': 'https://api.openai.com/v1/chat/completions',
+        'openai': 'https://api.openai.com/v1',
         'gemini': None,  # Gemini uses google.generativeai SDK directly
-        'deepseek': 'https://api.deepseek.com/v1/chat/completions',
-        'claude': 'https://api.anthropic.com/v1/messages'
+        'deepseek': 'https://api.deepseek.com/v1',
+        'claude': 'https://api.anthropic.com/v1/messages',
+        'nvidia': 'https://integrate.api.nvidia.com/v1'
     }
     api_url = api_url_map.get(model_provider)
 

@@ -129,18 +129,20 @@ class ActionExecutor:
         Execute a Select action on the Excel file.
         
         Args:
-            col1_idx: Starting column index (0-based from agent)
-            row1_idx: Starting row index (0-based from agent)
-            col2_idx: Ending column index (0-based from agent)
-            row2_idx: Ending row index (0-based from agent)
+            col1_idx: Starting column index (0-based DataFrame index from agent)
+            row1_idx: Starting row index (0-based DataFrame index from agent)
+            col2_idx: Ending column index (0-based DataFrame index from agent)
+            row2_idx: Ending row index (0-based DataFrame index from agent)
             
         Returns:
             Tuple of (success: bool, result_message: str)
         """
         try:
-            # Convert 0-based indices to 1-based for action_interpret.py
-            # action_interpret expects 1-based row and column numbers
-            result = self.excel_action.select(col1_idx + 1, row1_idx + 1, col2_idx + 1, row2_idx + 1)
+            # Convert 0-based DataFrame indices to 1-based Excel row/column numbers
+            # action_interpret.select expects Excel-style references (1-based)
+            # DataFrame row 0 maps to Excel row 2 (row 1 is header)
+            # DataFrame column 0 maps to Excel column 1
+            result = self.excel_action.select(col1_idx + 1, row1_idx + 2, col2_idx + 1, row2_idx + 2)
             self.last_operation_result = result
             
             # Apply highlighting to the selected range using openpyxl
@@ -150,7 +152,8 @@ class ActionExecutor:
             for row in range(row1_idx, row2_idx + 1):
                 for col in range(col1_idx, col2_idx + 1):
                     # openpyxl uses 1-based indexing
-                    cell = self.excel_action.active_sheet.cell(row=row+1, column=col+1)
+                    # DataFrame row r (0-based) maps to Excel row r+2 (row 1 is header)
+                    cell = self.excel_action.active_sheet.cell(row=row+2, column=col+1)
                     cell.fill = yellow_fill
             
             return True, result
@@ -166,17 +169,19 @@ class ActionExecutor:
         Execute a SelectAndDrag action (auto-fill).
         
         Args:
-            col1_idx: Starting column index (0-based from agent)
-            row1_idx: Starting row index (0-based from agent)
-            col2_idx: Ending column index (0-based from agent)
-            row2_idx: Ending row index (0-based from agent)
+            col1_idx: Starting column index (0-based DataFrame index from agent)
+            row1_idx: Starting row index (0-based DataFrame index from agent)
+            col2_idx: Ending column index (0-based DataFrame index from agent)
+            row2_idx: Ending row index (0-based DataFrame index from agent)
             
         Returns:
             Tuple of (success: bool, result_message: str)
         """
         try:
-            # Convert 0-based to 1-based for action_interpret.py
-            result = self.excel_action.select_and_drag(col1_idx + 1, row1_idx + 1, col2_idx + 1, row2_idx + 1)
+            # Convert 0-based DataFrame indices to 1-based Excel row/column numbers
+            # DataFrame row 0 maps to Excel row 2 (row 1 is header)
+            # DataFrame column 0 maps to Excel column 1
+            result = self.excel_action.select_and_drag(col1_idx + 1, row1_idx + 2, col2_idx + 1, row2_idx + 2)
             self.last_operation_result = result
             return True, result
         except Exception as e:

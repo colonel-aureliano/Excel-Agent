@@ -21,6 +21,9 @@ pillow>=10,<12
 # Google Gemini API client
 google-generativeai>=0.8,<1
 
+# OpenAI SDK (for OpenAI-compatible APIs like NVIDIA, DeepSeek, etc.)
+openai>=1.0,<2
+
 # Excel file handling
 pandas>=2.0,<3
 openpyxl>=3.0,<4
