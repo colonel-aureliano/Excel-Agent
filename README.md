@@ -239,7 +239,7 @@ Excel-Agent includes a FastAPI backend for Google Sheets integration:
 
 ```bash
 # Start the API server
-uvicorn main:app --host 127.0.0.1 --port 5000 --reload
+uvicorn main:app --host 127.0.0.1 --port 5050 --reload
 ```
 
 The server provides endpoints for:
