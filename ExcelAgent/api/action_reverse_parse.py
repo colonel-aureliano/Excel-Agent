@@ -93,6 +93,11 @@ def parse_action_entry(entry: str) -> Optional[object]:
     elif action_part.startswith("TERMINATE"):
         return Terminate(type="Terminate", reg=reg)
     
+    elif action_part.startswith("READ"):
+        _, cell_range = action_part.split(None, 1)
+        col1, row1, col2, row2 = parse_cell_range(cell_range)
+        return Read(type="Read", reg=reg, col1=col1, row1=row1, col2=col2, row2=row2)
+    
     raise ActionStrParseError(f"Invalid action entry: {entry}")
 
 def parse_action_string(action_string: str) -> List[object]:

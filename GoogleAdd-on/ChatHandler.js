@@ -23,8 +23,15 @@ function processUserMessage(message) {
     case MODE_TEST_SIMULATE:
       if (lowerMessage.includes('1')) {
         return { text: safelyExecute(() => api_simulate_test1()) };
-      } else {
+      } 
+      else if (lowerMessage.includes('2')) {
         return { text: safelyExecute(() => api_simulate_test2()) };
+      }
+      else if (lowerMessage.includes('3')) {
+        return { text: safelyExecute(() => api_simulate_test3()) };
+      }
+      else {
+        return { text: "I didn't understand that. Try 'test api' or a valid column formatting command." };
       }
       break;
 

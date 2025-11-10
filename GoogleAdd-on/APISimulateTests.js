@@ -46,5 +46,74 @@ function simulate_test2() {
 
   var resultMessage = processSequentialActions(actions);
   Logger.log("Final Message to User: " + resultMessage);
+}
 
+function simulate_test3() {
+  // Test READ action with various scenarios
+  var actions = [
+      { type: "TellUser", message: "Testing READ action functionality..." },
+      
+      // Step 1: Set up some test data
+      { type: "Select", col1: "A", row1: "1", col2: "A", row2: "5" },
+      { type: "Set", text: "Apple" },
+      { type: "Select", col1: "A", row1: "2", col2: "A", row2: "2" },
+      { type: "Set", text: "Banana" },
+      { type: "Select", col1: "A", row1: "3", col2: "A", row2: "3" },
+      { type: "Set", text: "Cherry" },
+      { type: "Select", col1: "A", row1: "4", col2: "A", row2: "4" },
+      { type: "Set", text: "Date" },
+      { type: "Select", col1: "A", row1: "5", col2: "A", row2: "5" },
+      { type: "Set", text: "Elderberry" },
+      
+      // Step 2: Set up column B with numbers
+      { type: "Select", col1: "B", row1: "1", col2: "B", row2: "5" },
+      { type: "Set", text: "10" },
+      { type: "Select", col1: "B", row1: "2", col2: "B", row2: "2" },
+      { type: "Set", text: "20" },
+      { type: "Select", col1: "B", row1: "3", col2: "B", row2: "3" },
+      { type: "Set", text: "30" },
+      { type: "Select", col1: "B", row1: "4", col2: "B", row2: "4" },
+      { type: "Set", text: "40" },
+      { type: "Select", col1: "B", row1: "5", col2: "B", row2: "5" },
+      { type: "Set", text: "50" },
+      
+      { type: "TellUser", message: "Test data set up complete." },
+      
+      // Step 3: Test reading a single cell
+      { type: "Read", col1: "A", row1: "1", col2: "A", row2: "1" },
+      { type: "TellUser", message: "Read single cell A1." },
+      
+      // Step 4: Test reading a range of cells
+      { type: "Read", col1: "A", row1: "1", col2: "A", row2: "3" },
+      { type: "TellUser", message: "Read range A1:A3." },
+      
+      // Step 5: Test reading a 2D range
+      { type: "Read", col1: "A", row1: "1", col2: "B", row2: "3" },
+      { type: "TellUser", message: "Read 2D range A1:B3." },
+      
+      // Step 6: Test reading with regex filter (only cells starting with 'B' or 'C')
+      { type: "Read", col1: "A", row1: "1", col2: "A", row2: "5", reg: "^[BC].*" },
+      { type: "TellUser", message: "Read column A with regex filter for B or C." },
+      
+      // Step 7: Test reading empty cells
+      { type: "Read", col1: "C", row1: "1", col2: "C", row2: "3" },
+      { type: "TellUser", message: "Read empty column C." },
+      
+      { type: "TellUser", message: "All READ tests completed." }
+  ];
+
+  var resultMessage = processSequentialActions(actions);
+  Logger.log("Final Message to User: " + resultMessage);
+}
+
+function api_simulate_test1() {
+  return simulate_test1();
+}
+
+function api_simulate_test2() {
+  return simulate_test2();
+}
+
+function api_simulate_test3() {
+  return simulate_test3();
 }

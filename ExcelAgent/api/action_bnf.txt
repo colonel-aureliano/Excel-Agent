@@ -9,6 +9,7 @@
                  | <tool_action>
                  | <tell_user_action>
                  | <terminate_action>
+                 | <read_action>
 
 <select_action> ::= "SELECT" <ws> <cell_ref> (":" <cell_ref>)?
 <select_and_drag_action> ::= "SELECTANDDRAG" <ws> <cell_ref> ":" <cell_ref>
@@ -17,6 +18,7 @@
 <tell_user_action> ::= "TELLUSER" <ws> <message>
 <terminate_action> ::= "TERMINATE" <ws> ""
 <format_action> ::= "FORMAT" <ws> <format_params>
+<read_action> ::= "READ" <ws> <cell_ref> (":" <cell_ref>)?
 
 <cell_ref> ::= <col> <row>
 

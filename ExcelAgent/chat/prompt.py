@@ -101,7 +101,10 @@ def get_action_prompt(subtask_instruction, excel_file_path, thought_history, sum
     
     prompt += "6. Tell User: Output a textual response directly to the user (this action does not manipulate the Excel file but communicates status or results).\n\n"
     
-    prompt += "7. Terminate: End the process if all operations required by the user instruction have been completed.\n\n"
+    prompt += "7. Read: Read the content of specified cells in the sheet. Specify the range using four parameters (col1, row1, col2, row2) that delineate the region to read. "
+    prompt += "The read values will be returned as a formatted message. Optionally, include a regex pattern to filter which cells to read (e.g., IF cell value matches pattern).\n\n"
+    
+    prompt += "8. Terminate: End the process if all operations required by the user instruction have been completed.\n\n"
     
     prompt += "### Output Format ###\n"
     prompt += "Your output must be divided into the following three sections:\n"

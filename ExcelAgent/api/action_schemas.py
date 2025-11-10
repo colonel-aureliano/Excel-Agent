@@ -102,6 +102,17 @@ class Terminate(Action):
     def _format_params(self):
         return ""
 
+
+class Read(Action):
+    type: str = "Read"
+    col1: str
+    row1: str
+    col2: Optional[str] = None
+    row2: Optional[str] = None
+
+    def _format_params(self):
+        return f"{self.col1}{self.row1}:{self.col2}{self.row2}" if self.col2 and self.row2 else f"{self.col1}{self.row1}"
+
 def action_list_to_str(actions: List[Action]) -> str:
     return " ; ".join(action.to_string() for action in actions)
 

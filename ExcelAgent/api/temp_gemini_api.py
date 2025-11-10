@@ -21,11 +21,13 @@ file = genai.upload_file(os.path.join(script_dir, "action_bnf.txt"))
 
 first_chat = True
 
-def gemini_one_shot_response(subtask_instruction, first_n_rows_of_sheet=None):
+def gemini_one_shot_response(subtask_instruction, first_n_rows_of_sheet=None, read_context=None):
     first_n_rows_of_sheet = str(first_n_rows_of_sheet)
     continuing_prompt = f" Now, go ahead, solve this new user instruction in the same fashion: {subtask_instruction}."
     if first_n_rows_of_sheet:
         continuing_prompt += f" Also you may or may not need this, but here are the first several rows of the user's sheet up to the last nonempty column: {first_n_rows_of_sheet}"
+    if read_context:
+        continuing_prompt += f"\n\nIMPORTANT CONTEXT FROM PREVIOUS READ ACTIONS:\n{read_context}\n\nUse this information to make informed decisions about the current task."
     global first_chat
     prompt = None
     if first_chat:
@@ -47,3 +49,4 @@ if __name__ == "__main__":
     # subtask_instruction = "Format to bold the elements in column I that are greater than 5000."
     # response_text = gemini_one_shot_response(subtask_instruction)
     # print(response_text)
+

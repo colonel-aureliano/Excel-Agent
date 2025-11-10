@@ -27,8 +27,11 @@ def process_message(request: MessageRequest):
 def process_message(request: SubtaskInstructionRequest):
     subtask_instruction = request.message
     first_n_rows_of_sheet = request.first_n_rows_of_sheet
+    read_context = request.read_context
     logger.info("Received subtask_instruction: "+ subtask_instruction)
     logger.info("First n rows of sheet: " + str(first_n_rows_of_sheet))
+    if read_context:
+        logger.info("Read context from previous actions: " + read_context)
 
     # Choose a sample based on the subtask_instruction
     # actions_response = sample_dispath(subtask_instruction)
@@ -39,7 +42,7 @@ def process_message(request: SubtaskInstructionRequest):
     # use parse_action_string to parse it into list of actions, ready to be sent to front-end
 
     #TODO replace the below with calling 3 agent LLMs
-    actions_response = gemini_one_shot_response(subtask_instruction, first_n_rows_of_sheet)
+    actions_response = gemini_one_shot_response(subtask_instruction, first_n_rows_of_sheet, read_context)
     logger.info("Actions response: " + str(actions_response))
     success = True
     try: 
@@ -54,3 +57,4 @@ def process_message(request: SubtaskInstructionRequest):
         actions=actions
     )
     return actions_response
+

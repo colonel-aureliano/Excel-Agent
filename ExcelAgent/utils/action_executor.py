@@ -4,6 +4,7 @@ Provides a bridge between agent action strings and actual Excel file manipulatio
 """
 
 import re
+import pandas as pd
 from typing import Optional, Tuple, List
 from .action_interpret import Action as ExcelAction
 
@@ -90,6 +91,28 @@ class ActionExecutor:
         if format_match:
             format_params = format_match.group(1)
             return self._execute_format(format_params)
+        
+        # Parse and execute Read actions
+        read_match = re.search(r'Read\s+([A-Z]+)(\d+)(?::([A-Z]+)(\d+))?', action_string, re.IGNORECASE)
+        if read_match:
+            col1, row1, col2, row2 = read_match.groups()
+            col1_idx = self._column_to_index(col1)
+            row1_idx = int(row1) - 1
+            col2_idx = self._column_to_index(col2) if col2 else col1_idx
+            row2_idx = int(row2) - 1 if row2 else row1_idx
+            return self._execute_read(col1_idx, row1_idx, col2_idx, row2_idx)
+        
+        # Parse Read with numeric indices
+        read_numeric_match = re.search(r'Read\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)', action_string, re.IGNORECASE)
+        if read_numeric_match:
+            col1_idx, row1_idx, col2_idx, row2_idx = map(int, read_numeric_match.groups())
+            return self._execute_read(col1_idx, row1_idx, col2_idx, row2_idx)
+        
+        # Parse Read with 2 parameters (single cell)
+        read_single_match = re.search(r'Read\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)', action_string, re.IGNORECASE)
+        if read_single_match:
+            col_idx, row_idx = map(int, read_single_match.groups())
+            return self._execute_read(col_idx, row_idx, col_idx, row_idx)
         
         # Parse and execute Tool actions (copy, paste, delete, etc.)
         tool_match = re.search(r'(Copy|Paste|Delete|Cut|Bold|Italic|Underline)\s*\(\s*\)', action_string, re.IGNORECASE)
@@ -266,6 +289,64 @@ class ActionExecutor:
         except Exception as e:
             error_msg = f"Error executing format: {str(e)}"
             print(error_msg)
+            return False, error_msg
+    
+    def _execute_read(self, col1_idx: int, row1_idx: int, col2_idx: int, row2_idx: int) -> Tuple[bool, str]:
+        """
+        Execute a Read action (read cell values from the Excel file).
+        
+        Args:
+            col1_idx: Starting column index (0-based DataFrame index)
+            row1_idx: Starting row index (0-based DataFrame index)
+            col2_idx: Ending column index (0-based DataFrame index)
+            row2_idx: Ending row index (0-based DataFrame index)
+            
+        Returns:
+            Tuple of (success: bool, result_message: str) containing the read values
+        """
+        try:
+            # Read values from the DataFrame
+            read_values = []
+            for row in range(row1_idx, row2_idx + 1):
+                row_values = []
+                for col in range(col1_idx, col2_idx + 1):
+                    if row < len(self.excel_action.df) and col < len(self.excel_action.df.columns):
+                        value = self.excel_action.df.iloc[row, col]
+                        # Handle different value types
+                        if pd.isna(value) or value is None or value == "":
+                            row_values.append("(empty)")
+                        else:
+                            row_values.append(str(value))
+                    else:
+                        row_values.append("(empty)")
+                read_values.append(row_values)
+            
+            # Format the read values
+            formatted_rows = []
+            for row_values in read_values:
+                formatted_rows.append(", ".join(row_values))
+            
+            # Create cell range notation
+            from openpyxl.utils import get_column_letter
+            col1_letter = get_column_letter(col1_idx + 1)
+            row1_excel = row1_idx + 2  # DataFrame row 0 maps to Excel row 2
+            col2_letter = get_column_letter(col2_idx + 1)
+            row2_excel = row2_idx + 2
+            
+            if col1_idx == col2_idx and row1_idx == row2_idx:
+                range_notation = f"{col1_letter}{row1_excel}"
+            else:
+                range_notation = f"{col1_letter}{row1_excel}:{col2_letter}{row2_excel}"
+            
+            result = f"READ {range_notation}: " + " | ".join(formatted_rows)
+            self.last_operation_result = result
+            return True, result
+            
+        except Exception as e:
+            error_msg = f"Error executing read: {str(e)}"
+            print(error_msg)
+            import traceback
+            traceback.print_exc()
             return False, error_msg
     
     def _execute_tool(self, tool_name: str) -> Tuple[bool, str]:
