@@ -2,7 +2,7 @@ function processSequentialActions(actions) {
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
     var selectedRange = null;
     var userMessages = [];
-    var readMessage = "";
+    var readMessages = [];
 
     actions.forEach(action => {
         if (action.type === "Select") {
@@ -23,18 +23,21 @@ function processSequentialActions(actions) {
                 userMessages.push(action.message);
             }
         } else if (action.type === "Read") {
-            readMessage = applyRead(sheet, action);
+            var readMessage = applyRead(sheet, action);
+            if (readMessage) {
+                readMessages.push(readMessage);
+            }
         } else if (action.type === "Terminate") {
             Logger.log("Processing terminated.");
             return {
                 userMessages: userMessages.join(" "),
-                readMessages: [readMessage]
+                readMessages: readMessages.join(" ")
             };
         }
     });
     return {
         userMessages: userMessages.join(" "),
-        readMessages: [readMessage]
+        readMessages: readMessages
     };
 }
 
@@ -204,29 +207,18 @@ function applyToolAction(range, action) {
 function applyRead(sheet, action) {
     var range = getRangeFromSelect(sheet, action);
     var values = range.getValues();
-    var regExp = action.reg ? new RegExp(action.reg) : null;
     
     var readValues = [];
-    var hasMatches = false;
     
     for (var i = 0; i < values.length; i++) {
         var rowValues = [];
         for (var j = 0; j < values[i].length; j++) {
             var cellValue = values[i][j];
-            // If regex is provided, only include cells that match; otherwise include all
-            if (!regExp || regExp.test(cellValue)) {
-                rowValues.push(cellValue);
-                hasMatches = true;
-            }
+            rowValues.push(cellValue);
         }
         if (rowValues.length > 0) {
             readValues.push(rowValues);
         }
-    }
-    
-    if (!hasMatches && regExp) {
-        Logger.log("No cells matched the regex pattern for READ action.");
-        return "READ: No cells matched the specified pattern in range " + range.getA1Notation() + ".";
     }
     
     // Format the read values as a readable message
