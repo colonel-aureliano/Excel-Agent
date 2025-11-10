@@ -1,6 +1,7 @@
 <action_string> ::= <action_entry> ((";") <action_entry>)*
 
 <action_entry> ::= "REGEX" <ws> <regex> <ws> "|" <ws> <typed_action>
+                 | <read_action>
 
 <typed_action> ::= <select_action>
                  | <select_and_drag_action>
@@ -9,7 +10,6 @@
                  | <tool_action>
                  | <tell_user_action>
                  | <terminate_action>
-                 | <read_action>
 
 <select_action> ::= "SELECT" <ws> <cell_ref> (":" <cell_ref>)?
 <select_and_drag_action> ::= "SELECTANDDRAG" <ws> <cell_ref> ":" <cell_ref>
