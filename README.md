@@ -4,6 +4,8 @@
 
 Excel-Agent is an intelligent automation tool that takes natural language instructions (e.g., "highlight all rows where the student's last name is Peters", "summarize the Excel content", "add a new column called Status") and executes them directly on your local Excel files. Powered by state-of-the-art language models, it combines planning, execution, and reflection to reliably complete complex Excel tasks.
 
+Paper: [SheetMind: An End-to-End LLM-Powered Multi-Agent Framework for Spreadsheet Automation](https://arxiv.org/abs/2506.12339) - Multi-agent framework for spreadsheet automation via natural language
+
 ## ✨ Features
 
 - 🤖 **Natural Language Interface** - Describe what you want in plain English
@@ -323,65 +325,6 @@ Columns: ['Student ID', 'Last Name', 'First Name', 'Class', 'Sex']
 🤖 Agent: I have highlighted the row containing Jennifer Peters.
 ```
 
-## 🛠️ Development
-
-### Project Structure
-
-```
-Excel-Agent/
-├── ExcelAgent/              # Core agent code
-│   ├── agents/             # Agent state and base classes
-│   │   ├── agent_base.py   # Base agent class
-│   │   ├── agent_extend.py # Extended agent functionality
-│   │   ├── agent_state.py  # Agent state management
-│   │   └── genai_apis.py   # GenAI API utilities
-│   ├── api/                # API schemas and parsing
-│   │   ├── action_bnf.txt  # Action grammar definition
-│   │   ├── action_reverse_parse.py  # Parse action strings
-│   │   ├── action_schemas.py  # Action data models
-│   │   ├── action_sequence_sample.py  # Sample action sequences
-│   │   ├── checks.py       # Health check endpoint
-│   │   ├── exceptions.py   # Custom exceptions
-│   │   ├── message.py      # Message processing endpoints
-│   │   ├── one_shot_prompt.txt  # One-shot prompt template
-│   │   └── schemas.py      # API request/response schemas
-│   ├── chat/               # LLM interaction and prompts
-│   │   ├── api.py          # Multi-provider LLM inference
-│   │   ├── chat.py         # Chat management
-│   │   ├── prompt.py       # Agent prompts and instructions
-│   │   └── response.py     # Response parsing
-│   └── utils/              # Action execution utilities
-│       ├── action_executor.py  # Execute actions on Excel files
-│       ├── action_interpret.py # Interpret action strings
-│       ├── key_stroke_handle.py  # Keyboard/mouse handling
-│       └── utils.py        # General utilities
-├── GoogleAdd-on/           # Google Sheets add-on frontend
-│   ├── ActionExecuter.js   # Execute actions in Google Sheets
-│   ├── APIRequests.js      # API communication
-│   ├── APISimulateTests.js # API tests
-│   ├── ChatHandler.js       # Chat interface handler
-│   ├── ChatSidebar.html    # Chat sidebar UI
-│   ├── Code.js             # Main Apps Script code
-│   └── appsscript.json     # Apps Script manifest
-├── logs/                   # Application logs
-├── temp/                   # Temporary files
-├── main.py                 # FastAPI server entry point
-├── run.py                  # CLI agent runner
-├── requirements.txt        # Python dependencies
-└── example*.xlsx           # Example Excel files
-```
-
-### Key Files
-
-- `run.py` - Main CLI entry point for running the agent
-- `main.py` - FastAPI server for Google Sheets integration
-- `ExcelAgent/utils/action_executor.py` - Action execution engine for Excel files
-- `ExcelAgent/utils/action_interpret.py` - Action string parsing and interpretation
-- `ExcelAgent/chat/api.py` - LLM inference with multi-provider support (Gemini, OpenAI, DeepSeek, Claude, NVIDIA)
-- `ExcelAgent/chat/prompt.py` - Agent prompts and instructions
-- `ExcelAgent/api/message.py` - FastAPI endpoints for message processing
-- `ExcelAgent/api/action_reverse_parse.py` - Parse action strings from LLM output
-
 ## 📄 License
 
 [Add your license information here]
@@ -389,7 +332,6 @@ Excel-Agent/
 ## 🙏 Acknowledgments
 
 This project is inspired by:
-- [SheetMind: An End-to-End LLM-Powered Multi-Agent Framework for Spreadsheet Automation](https://arxiv.org/abs/2506.12339) - Multi-agent framework for spreadsheet automation via natural language
 - [MobileAgent](https://github.com/X-PLUG/MobileAgent/tree/main/PC-Agent) - Multi-agent architecture
 - [MobileAgent v2 Paper](https://arxiv.org/abs/2502.14282)
 - [PC-Agent Paper](https://arxiv.org/abs/2308.00352)
