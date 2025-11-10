@@ -28,8 +28,8 @@ class SingularAgent:
 
     def __init__(
         self,
-        model_provider: Optional[str] = "gemini",
-        model_name: Optional[str] = "gemini-2.0-flash",
+        model_provider: Optional[str] = "nvidia",
+        model_name: Optional[str] = "moonshotai/kimi-k2-instruct",
         api_key: Optional[str] = None,
         api_url: Optional[str] = None,
         temperature: float = 0.0,
@@ -37,8 +37,8 @@ class SingularAgent:
         self.script_dir = os.path.dirname(os.path.abspath(__file__))
         self.action_bnf_text = self._load_file("action_bnf.txt")
 
-        self.model_provider = (model_provider or "gemini").lower()
-        self.model_name = model_name or "gemini-2.0-flash"
+        self.model_provider = model_provider.lower()
+        self.model_name = model_name
         self.api_url = api_url
         self.temperature = temperature
 
@@ -67,9 +67,9 @@ User instruction: Format to bold the elements in column I until row 100 that are
 Correct answer: REGEX ^.*$ | SELECT I1:I100 ; REGEX ^([5-9][0-9]{3}|[1-9][0-9]{4,}).*$ | FORMAT style: Bold ; REGEX ^.*$ | TELLUSER I have formatted to bold the appropriate elements.
 Explanation: First action selects column I through the 100th row. Second action uses regular expression to match cells with values greater than 5000 and format them to bold. Third action tells user you're done.
 
-User instruction: Read the values from cells A1 to A5 and tell me what they are.
-Correct answer: REGEX ^.*$ | READ A1:A5
-Explanation: The action reads the content of cells A1 through A5. Wait for next turn to issue the next command.
+User instruction: Tell me the names of the students in grade 9 that have a score greater than 90.
+Correct answer: READ C1:C-1 ; READ D1:D-1 ; READ K1:K-1 ; REGEX ^.*$ | TELLUSER The names of the students in grade 9 that have a score greater than 90 are: John, Jane, Jim, and Jill.
+Explanation: We assume it is learnable from somewhere that the column C is the names of the students, column D is the grades, and column K is the scores. Then by cross-referencing the three, we can tell the user the names of the students in grade 9 that have a score greater than 90 (assumed to be John, Jane, Jim, and Jill).
 
 Your answer should ONLY include the correct answer. Absolutely no explanations necessarily.
         """+"\n Actions BNF Specification: \n"+self.action_bnf_text
