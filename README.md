@@ -1,6 +1,8 @@
 # Excel-Agent
 
-> An AI-powered agent that understands natural language instructions and automatically manipulates Excel files using LLMs.
+**Link to demo (Google Sheets integration): https://youtu.be/vFo5Jgxl1T0?si=DF-wO0QMo4VIAWVL**
+
+An AI-powered agent that understands natural language instructions and automatically manipulates Excel files using LLMs.
 
 Excel-Agent is an intelligent automation tool that takes natural language instructions (e.g., "highlight all rows where the student's last name is Peters", "summarize the Excel content", "add a new column called Status") and executes them directly on your local Excel files. Powered by state-of-the-art language models, it combines planning, execution, and reflection to reliably complete complex Excel tasks.
 
