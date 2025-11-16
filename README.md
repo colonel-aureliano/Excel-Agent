@@ -1,6 +1,6 @@
 # Excel-Agent
 
-**Link to demo (Google Sheets integration): https://youtu.be/vFo5Jgxl1T0?si=DF-wO0QMo4VIAWVL**
+**Link to demo (Google Sheets integration): https://youtu.be/WZ2gFhXnfG8**
 
 An AI-powered agent that understands natural language instructions and automatically manipulates Excel files using LLMs.
 
