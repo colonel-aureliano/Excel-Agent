@@ -24,6 +24,7 @@
 
 <col> ::= <uppercase_letter>+
 <row> ::= <digit>+
+          | -1
 
 <text_param> ::= <any_text>
 <tool_name> ::= "copy" | "paste" | "pasteasvalues" | "delete"
