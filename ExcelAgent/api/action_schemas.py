@@ -43,7 +43,7 @@ class SelectAndDrag(Action):
 
 class Format(Action):
     type: str = "Format"
-    style: str
+    style: Optional[str] = None
     color: Optional[str] = None  # Used for background and font color
     size: Optional[int] = None  # Used for font size
     alignment: Optional[str] = None  # Used for horizontal/vertical alignment
@@ -101,6 +101,21 @@ class Terminate(Action):
     
     def _format_params(self):
         return ""
+
+
+class Read(Action):
+    type: str = "Read"
+    col1: str
+    row1: str
+    col2: Optional[str] = None
+    row2: Optional[str] = None
+
+    def _format_params(self):
+        return f"{self.col1}{self.row1}:{self.col2}{self.row2}" if self.col2 and self.row2 else f"{self.col1}{self.row1}"
+
+    def to_string(self):
+        params = self._format_params()
+        return f"READ {params}" if params else "READ"
 
 def action_list_to_str(actions: List[Action]) -> str:
     return " ; ".join(action.to_string() for action in actions)

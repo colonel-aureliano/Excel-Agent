@@ -54,7 +54,25 @@ def parse_format_params(param_str: str):
     return params
 
 def parse_action_entry(entry: str) -> Optional[object]:
-    match = re.fullmatch(regex_entry, entry.strip())
+    stripped_entry = entry.strip()
+
+    if not stripped_entry:
+        raise ActionStrParseError("Empty action entry provided.")
+
+    if re.match(r"^READ\b", stripped_entry, re.IGNORECASE):
+        try:
+            _, cell_range = stripped_entry.split(None, 1)
+        except ValueError:
+            raise ActionStrParseError(f"READ action missing range: {entry}")
+
+        parsed_range = parse_cell_range(cell_range)
+        if not parsed_range:
+            raise ActionStrParseError(f"Invalid READ range: {cell_range}")
+
+        col1, row1, col2, row2 = parsed_range
+        return Read(type="Read", col1=col1, row1=row1, col2=col2, row2=row2)
+
+    match = re.fullmatch(regex_entry, stripped_entry)
     if not match:
         raise ActionStrParseError(f"Invalid action entry: {entry}")
     reg, action_part = match.groups()
@@ -93,6 +111,9 @@ def parse_action_entry(entry: str) -> Optional[object]:
     elif action_part.startswith("TERMINATE"):
         return Terminate(type="Terminate", reg=reg)
     
+    elif action_part.startswith("READ"):
+        raise ActionStrParseError("Regex-prefixed READ actions are no longer supported. Use READ without regex.")
+
     raise ActionStrParseError(f"Invalid action entry: {entry}")
 
 def parse_action_string(action_string: str) -> List[object]:

@@ -2,6 +2,7 @@ function processSequentialActions(actions) {
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
     var selectedRange = null;
     var userMessages = [];
+    var readMessages = [];
 
     actions.forEach(action => {
         if (action.type === "Select") {
@@ -21,12 +22,23 @@ function processSequentialActions(actions) {
             if (action.message) {
                 userMessages.push(action.message);
             }
+        } else if (action.type === "Read") {
+            var readMessage = applyRead(sheet, action);
+            if (readMessage) {
+                readMessages.push(readMessage);
+            }
         } else if (action.type === "Terminate") {
             Logger.log("Processing terminated.");
-            return userMessages.join(" ");
+            return {
+                userMessages: userMessages.join(" "),
+                readMessages: readMessages.join(" ")
+            };
         }
     });
-    return userMessages.join(" ");
+    return {
+        userMessages: userMessages.join(" "),
+        readMessages: readMessages
+    };
 }
 
 function getRangeFromSelect(sheet, action) {
@@ -190,5 +202,40 @@ function applyToolAction(range, action) {
     }
 
     range.setValues(values); // Apply all changes
+}
+
+function applyRead(sheet, action) {
+    var range = getRangeFromSelect(sheet, action);
+    var values = range.getValues();
+    
+    var readValues = [];
+    
+    for (var i = 0; i < values.length; i++) {
+        var rowValues = [];
+        for (var j = 0; j < values[i].length; j++) {
+            var cellValue = values[i][j];
+            rowValues.push(cellValue);
+        }
+        if (rowValues.length > 0) {
+            readValues.push(rowValues);
+        }
+    }
+    
+    // Format the read values as a readable message
+    var formattedValues = readValues.map(function(row) {
+        return row.map(function(cell) {
+            // Handle different value types
+            if (cell === null || cell === undefined || cell === "") {
+                return "(empty)";
+            }
+            return String(cell);
+        }).join(", ");
+    }).join(" | ");
+    
+    var rangeNotation = range.getA1Notation();
+    var readMessage = "READ " + rangeNotation + ": " + formattedValues;
+    Logger.log(readMessage);
+    
+    return readMessage;
 }
 

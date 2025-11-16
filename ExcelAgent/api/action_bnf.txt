@@ -1,6 +1,7 @@
 <action_string> ::= <action_entry> ((";") <action_entry>)*
 
 <action_entry> ::= "REGEX" <ws> <regex> <ws> "|" <ws> <typed_action>
+                 | <read_action>
 
 <typed_action> ::= <select_action>
                  | <select_and_drag_action>
@@ -17,11 +18,13 @@
 <tell_user_action> ::= "TELLUSER" <ws> <message>
 <terminate_action> ::= "TERMINATE" <ws> ""
 <format_action> ::= "FORMAT" <ws> <format_params>
+<read_action> ::= "READ" <ws> <cell_ref> (":" <cell_ref>)?
 
 <cell_ref> ::= <col> <row>
 
 <col> ::= <uppercase_letter>+
 <row> ::= <digit>+
+          | -1
 
 <text_param> ::= <any_text>
 <tool_name> ::= "copy" | "paste" | "pasteasvalues" | "delete"
