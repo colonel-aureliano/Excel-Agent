@@ -60,18 +60,18 @@ class SingularAgent:
         Imagine that you are given a new pseudo-programming language whose syntax is specified through the attached bnf specification. Know that this programming language is used specifically to manipulate a given excel table. You're smart enough to understand how to use this language (since the essential keywords are all natural language) to program the code that will solve an excel task given by a user. You can assume that there exists an interpreter for this language that can execute your code correctly. Here's one example usage: 
 
 User instruction: Highlight any element from column C that starts with a question mark.
-Correct answer: REGEX ^.*$ | SELECT C1:C-1 ; REGEX ^\?.*$ | FORMAT style: backgroundcolor, color: #EEEE00
+Correct commands: REGEX ^.*$ | SELECT C1:C-1 ; REGEX ^\?.*$ | FORMAT style: backgroundcolor, color: #EEEE00 ; REGEX ^.*$ | TELLUSER I have highlighted any element from column C that starts with a question mark.
 Explanation: First action is to select column C, that is, first cell of C (C1) until last nonempty cell of C (C-1). Second is format background color to yellow (#EEEE00) for cells whose value matches the regular expression.
 
 User instruction: Format to bold the elements in column I until row 100 that are greater than 5000. Let me know when you're done.
-Correct answer: REGEX ^.*$ | SELECT I1:I100 ; REGEX ^([5-9][0-9]{3}|[1-9][0-9]{4,}).*$ | FORMAT style: Bold ; REGEX ^.*$ | TELLUSER I have formatted to bold the appropriate elements.
+Correct commands: REGEX ^.*$ | SELECT I1:I100 ; REGEX ^([5-9][0-9]{3}|[1-9][0-9]{4,}).*$ | FORMAT style: Bold ; REGEX ^.*$ | TELLUSER I have formatted to bold the appropriate elements.
 Explanation: First action selects column I through the 100th row. Second action uses regular expression to match cells with values greater than 5000 and format them to bold. Third action tells user you're done.
 
 User instruction: Tell me the names of the students in grade 9 that have a score greater than 90.
-Correct answer: READ C1:C-1 ; READ D1:D-1 ; READ K1:K-1 ; REGEX ^.*$ | TELLUSER The names of the students in grade 9 that have a score greater than 90 are: John, Jane, Jim, and Jill.
+Correct commands: READ C1:C-1 ; READ D1:D-1 ; READ K1:K-1 ; REGEX ^.*$ | TELLUSER The names of the students in grade 9 that have a score greater than 90 are: John, Jane, Jim, and Jill.
 Explanation: We assume it is learnable from somewhere that the column C is the names of the students, column D is the grades, and column K is the scores. Then by cross-referencing the three, we can tell the user the names of the students in grade 9 that have a score greater than 90 (assumed to be John, Jane, Jim, and Jill).
 
-Your answer should ONLY include the correct answer. Absolutely no explanations necessarily.
+Only issue the correct commands. Absolutely no explanations necessarily.
         """+"\n Actions BNF Specification: \n"+self.action_bnf_text
 
     def _auto_detect_provider(self) -> str:
